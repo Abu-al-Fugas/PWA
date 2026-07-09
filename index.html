@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>СМТ Мониторинг — Космос</title>
     
-    <meta name="theme-color" content="#0a0e1a">
+    <meta name="theme-color" content="#f0f2f5">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="СМТ Мониторинг">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     
     <link rel="apple-touch-icon" href="icon.png">
     
@@ -22,21 +22,21 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
-        /* ===== Космическая тема ===== */
+        /* ===== Светлая и мягкая тема палитры ===== */
         :root {
-            --bg-primary: #0a0e1a;
-            --bg-secondary: #111629;
-            --glass-bg: rgba(255, 255, 255, 0.04);
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --text-primary: #f0f4ff;
-            --text-secondary: #a0b4d9;
-            --text-muted: #6a7fa0;
-            --accent-cyan: #00d4ff;
-            --accent-blue: #4f7cff;
-            --accent-purple: #8b5cf6;
-            --accent-orange: #f59e0b;
-            --accent-pink: #f472b6;
-            --shadow-glow: 0 0 30px rgba(0, 212, 255, 0.15);
+            --bg-primary: #f0f2f5;
+            --bg-secondary: #ffffff;
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(0, 0, 0, 0.08);
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --text-muted: #64748b;
+            --accent-cyan: #0284c7;
+            --accent-blue: #2563eb;
+            --accent-purple: #7c3aed;
+            --accent-orange: #d97706;
+            --accent-pink: #db2777;
+            --shadow-glow: 0 4px 20px rgba(0, 0, 0, 0.05);
             --radius: 16px;
         }
 
@@ -56,7 +56,7 @@
             overflow-x: hidden;
         }
 
-        /* ===== Звёздный фон ===== */
+        /* ===== Звёздный фон (светлые частицы) ===== */
         #stars-canvas {
             position: fixed;
             top: 0;
@@ -109,7 +109,7 @@
             width: 10px;
             height: 10px;
             border-radius: 50%;
-            background: #4a5a7a;
+            background: #94a3b8;
             transition: background 0.4s, box-shadow 0.4s;
         }
         .dot.online {
@@ -118,9 +118,9 @@
             animation: pulse-dot 2s infinite;
         }
         @keyframes pulse-dot {
-            0% { box-shadow: 0 0 0 0 rgba(0, 212, 255, 0.5); }
-            70% { box-shadow: 0 0 20px 6px rgba(0, 212, 255, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(0, 212, 255, 0); }
+            0% { box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.5); }
+            70% { box-shadow: 0 0 20px 6px rgba(2, 132, 199, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(2, 132, 199, 0); }
         }
 
         /* ===== Навигация (вкладки) ===== */
@@ -169,7 +169,7 @@
             margin-bottom: 30px;
         }
         .stat-card {
-            background: var(--glass-bg);
+            background: var(--bg-secondary);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             border: 1px solid var(--glass-border);
@@ -193,13 +193,13 @@
             left: -50%;
             width: 200%;
             height: 200%;
-            background: radial-gradient(circle at 30% 40%, rgba(0,212,255,0.03), transparent 70%);
+            background: radial-gradient(circle at 30% 40%, rgba(2,132,199,0.03), transparent 70%);
             pointer-events: none;
         }
         .stat-card:hover {
             transform: translateY(-5px);
-            border-color: rgba(0, 212, 255, 0.25);
-            box-shadow: 0 8px 40px rgba(0, 212, 255, 0.12);
+            border-color: rgba(2, 132, 199, 0.25);
+            box-shadow: 0 8px 40px rgba(2, 132, 199, 0.12);
         }
         .stat-card .icon {
             font-size: 1.5rem;
@@ -230,14 +230,14 @@
         .stat-card.accent-purple .number { color: var(--accent-purple); }
         .stat-card.accent-orange .number { color: var(--accent-orange); }
         .stat-card.accent-pink .number { color: var(--accent-pink); }
-        .stat-card.accent-green .number { color: #34d399; }
+        .stat-card.accent-green .number { color: #16a34a; }
 
         .stat-card.clickable {
             cursor: pointer;
         }
         .stat-card.clickable:hover {
             border-color: var(--accent-cyan);
-            box-shadow: 0 8px 40px rgba(0, 212, 255, 0.18);
+            box-shadow: 0 8px 40px rgba(2, 132, 199, 0.18);
         }
 
         .model-list {
@@ -255,7 +255,7 @@
             max-width: 200px;
             font-size: 0.85rem;
             color: var(--text-secondary);
-            border-bottom: 1px solid rgba(255,255,255,0.04);
+            border-bottom: 1px solid rgba(0,0,0,0.04);
             padding: 2px 0;
         }
         .model-item .model-name {
@@ -274,7 +274,7 @@
         }
 
         .table-container {
-            background: var(--glass-bg);
+            background: var(--bg-secondary);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             border: 1px solid var(--glass-border);
@@ -289,7 +289,7 @@
             font-size: 1rem;
             letter-spacing: 0.03em;
             color: var(--text-secondary);
-            border-bottom: 1px solid rgba(255,255,255,0.06);
+            border-bottom: 1px solid rgba(0,0,0,0.06);
             text-transform: uppercase;
             display: none;
         }
@@ -306,16 +306,16 @@
             text-align: left;
             padding: 14px 20px;
             color: var(--text-secondary);
-            font-weight: 500;
+            font-weight: 600;
             font-size: 0.75rem;
             text-transform: uppercase;
             letter-spacing: 0.06em;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
-            background: rgba(0,0,0,0.2);
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+            background: #f8fafc;
         }
         td {
             padding: 14px 20px;
-            border-bottom: 1px solid rgba(255,255,255,0.04);
+            border-bottom: 1px solid rgba(0,0,0,0.04);
             vertical-align: middle;
             color: var(--text-primary);
         }
@@ -323,7 +323,7 @@
             border-bottom: none;
         }
         tr:hover td {
-            background: rgba(255,255,255,0.03);
+            background: #f1f5f9;
         }
         .installer-name {
             font-weight: 600;
@@ -345,8 +345,8 @@
             border: none;
         }
         .action-btn {
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.08);
+            background: #f8fafc;
+            border: 1px solid rgba(0,0,0,0.08);
             color: var(--text-secondary);
             padding: 6px 10px;
             border-radius: 8px;
@@ -363,10 +363,10 @@
             min-width: 36px;
         }
         .action-btn:hover {
-            background: rgba(0, 212, 255, 0.08);
+            background: rgba(2, 132, 199, 0.08);
             border-color: var(--accent-cyan);
             color: var(--accent-cyan);
-            box-shadow: 0 0 20px rgba(0, 212, 255, 0.1);
+            box-shadow: 0 0 20px rgba(2, 132, 199, 0.1);
         }
         .action-btn svg {
             width: 18px;
@@ -387,7 +387,7 @@
         }
         #fullTable .table-container {
             border-radius: var(--radius);
-            background: var(--bg-primary);
+            background: var(--bg-secondary);
             border: 1px solid var(--glass-border);
             box-shadow: var(--shadow-glow);
             backdrop-filter: none;
@@ -397,10 +397,11 @@
             justify-content: flex-end;
             align-items: center;
             padding: 12px 20px;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+            background: #f8fafc;
         }
         #fullTable .table-toolbar .export-btn {
-            background: rgba(0, 212, 255, 0.08);
+            background: rgba(2, 132, 199, 0.08);
             border: 1px solid var(--accent-cyan);
             color: var(--accent-cyan);
             padding: 6px 18px;
@@ -415,19 +416,19 @@
             gap: 8px;
         }
         #fullTable .table-toolbar .export-btn:hover {
-            background: rgba(0, 212, 255, 0.15);
-            box-shadow: 0 0 20px rgba(0, 212, 255, 0.15);
+            background: rgba(2, 132, 199, 0.15);
+            box-shadow: 0 0 20px rgba(2, 132, 199, 0.15);
         }
         #fullTable .table-responsive {
-            background: var(--bg-primary);
+            background: var(--bg-secondary);
             border-radius: 0 0 var(--radius) var(--radius);
             overflow-x: auto;
         }
         #fullTable table {
             font-family: Arial, sans-serif;
             font-size: 0.75rem;
-            color: #ffffff;
-            background: #0d1117;
+            color: var(--text-primary);
+            background: var(--bg-secondary);
             border-collapse: collapse;
             width: 100%;
             table-layout: auto;
@@ -436,14 +437,14 @@
         #fullTable table td {
             padding: 6px 8px;
             border: none;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
+            border-bottom: 1px solid rgba(0,0,0,0.06);
             white-space: nowrap;
             text-align: left;
             vertical-align: middle;
         }
         #fullTable table th {
-            background: #0a0e1a;
-            color: #ffffff;
+            background: #f1f5f9;
+            color: #1e293b;
             font-weight: 600;
             font-size: 0.7rem;
             text-transform: uppercase;
@@ -451,15 +452,15 @@
             position: sticky;
             top: 0;
             z-index: 10;
-            border-bottom: 2px solid #1e2a3a;
+            border-bottom: 2px solid #cbd5e1;
             padding: 8px 8px;
         }
         #fullTable table td {
-            color: #e6edf5;
+            color: #334155;
             font-weight: 400;
         }
         #fullTable table tr:hover td {
-            background: rgba(255,255,255,0.03);
+            background: #f1f5f9;
         }
 
         /* ===== Модальное окно ===== */
@@ -470,7 +471,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(5, 8, 20, 0.8);
+            background: rgba(15, 23, 42, 0.4);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
             z-index: 2000;
@@ -483,14 +484,14 @@
         }
         .modal {
             background: var(--bg-secondary);
-            border: 1px solid rgba(255,255,255,0.08);
+            border: 1px solid rgba(0,0,0,0.08);
             border-radius: var(--radius);
             max-width: 720px;
             width: 100%;
             max-height: 85vh;
             display: flex;
             flex-direction: column;
-            box-shadow: 0 32px 80px rgba(0,0,0,0.7), 0 0 60px rgba(0, 212, 255, 0.05);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.1), 0 0 60px rgba(2, 132, 199, 0.05);
             animation: modalFade 0.25s ease;
         }
         @keyframes modalFade {
@@ -502,7 +503,7 @@
             justify-content: space-between;
             align-items: center;
             padding: 18px 24px;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
+            border-bottom: 1px solid rgba(0,0,0,0.06);
         }
         .modal-header h3 {
             font-family: 'Orbitron', sans-serif;
@@ -543,12 +544,12 @@
             font-size: 0.75rem;
             letter-spacing: 0.04em;
             color: var(--accent-cyan);
-            background: rgba(0, 212, 255, 0.06);
+            background: rgba(2, 132, 199, 0.06);
             padding: 4px 14px;
             border-radius: 20px;
             display: inline-block;
             margin-bottom: 10px;
-            border: 1px solid rgba(0, 212, 255, 0.08);
+            border: 1px solid rgba(2, 132, 199, 0.08);
         }
         .record-item {
             display: flex;
@@ -556,9 +557,9 @@
             align-items: center;
             padding: 8px 12px;
             border-radius: 8px;
-            background: rgba(255,255,255,0.02);
+            background: #f8fafc;
             margin-bottom: 4px;
-            border-left: 2px solid rgba(0, 212, 255, 0.1);
+            border-left: 2px solid rgba(2, 132, 199, 0.3);
         }
         .record-item .record-main {
             display: flex;
@@ -589,13 +590,13 @@
         }
         .modal-footer {
             padding: 12px 24px 18px;
-            border-top: 1px solid rgba(255,255,255,0.06);
+            border-top: 1px solid rgba(0,0,0,0.06);
             display: flex;
             justify-content: flex-end;
         }
         .modal-footer .btn-close {
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.08);
+            background: #f1f5f9;
+            border: 1px solid rgba(0,0,0,0.08);
             padding: 8px 24px;
             border-radius: 8px;
             font-weight: 500;
@@ -605,7 +606,7 @@
             font-family: 'Inter', sans-serif;
         }
         .modal-footer .btn-close:hover {
-            background: rgba(255,255,255,0.12);
+            background: #e2e8f0;
             color: var(--text-primary);
         }
 
@@ -747,14 +748,14 @@
 
     <script>
         // ============================================================
-        // 1. ЗВЁЗДНЫЙ ФОН
+        // 1. СВЕТЛЫЙ ФОН ЧАСТИЦ
         // ============================================================
         (function initStars() {
             const canvas = document.getElementById('stars-canvas');
             const ctx = canvas.getContext('2d');
             let W, H;
             const stars = [];
-            const NUM_STARS = 220;
+            const NUM_STARS = 120; // Немного убавил для чистоты светлого фона
             const MAX_SPEED = 0.4;
 
             function resize() {
@@ -768,9 +769,9 @@
                 stars.push({
                     x: Math.random() * W,
                     y: Math.random() * H,
-                    r: Math.random() * 1.2 + 0.5,
+                    r: Math.random() * 1.5 + 0.5,
                     speed: Math.random() * MAX_SPEED + 0.1,
-                    opacity: Math.random() * 0.8 + 0.2,
+                    opacity: Math.random() * 0.4 + 0.1, // Более прозрачные для светлого фона
                 });
             }
 
@@ -779,10 +780,10 @@
                 for (const s of stars) {
                     ctx.beginPath();
                     ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-                    ctx.fillStyle = `rgba(255, 255, 255, ${s.opacity})`;
+                    ctx.fillStyle = `rgba(37, 99, 235, ${s.opacity})`; // Сделал частицы мягко-синими
                     ctx.fill();
-                    s.opacity += (Math.random() - 0.5) * 0.02;
-                    s.opacity = Math.min(1, Math.max(0.2, s.opacity));
+                    s.opacity += (Math.random() - 0.5) * 0.01;
+                    s.opacity = Math.min(0.5, Math.max(0.1, s.opacity));
                     s.y += s.speed * 0.3;
                     if (s.y > H) {
                         s.y = 0;
@@ -1117,7 +1118,7 @@
 
             html += '<tr>';
             headers.forEach(h => {
-                html += `<th style="background:#0a0e1a;color:#fff;font-weight:bold;border:1px solid #444;padding:6px 8px;">${h}</th>`;
+                html += `<th style="background:#f1f5f9;color:#1e293b;font-weight:bold;border:1px solid #cbd5e1;padding:6px 8px;">${h}</th>`;
             });
             html += '</tr>';
 
@@ -1140,7 +1141,7 @@
                     item.date || ''
                 ];
                 cells.forEach(val => {
-                    html += `<td style="border:1px solid #444;padding:4px 6px;mso-number-format:'\\@';">${val}</td>`;
+                    html += `<td style="border:1px solid #cbd5e1;padding:4px 6px;mso-number-format:'\\@';">${val}</td>`;
                 });
                 html += '</tr>';
             });
@@ -1171,11 +1172,11 @@
             if (snap.val() === true) {
                 dot.classList.add('online');
                 text.innerText = 'В сети';
-                text.style.color = '#00d4ff';
+                text.style.color = '#0284c7';
             } else {
                 dot.classList.remove('online');
                 text.innerText = 'Офлайн';
-                text.style.color = '#6a7fa0';
+                text.style.color = '#64748b';
             }
         });
 
@@ -1199,7 +1200,7 @@
         }, err => {
             console.error('Firebase error:', err);
             document.getElementById('statsGrid').innerHTML = `
-                <div class="stat-card" style="grid-column:1/-1; text-align:center; color:#f472b6;">
+                <div class="stat-card" style="grid-column:1/-1; text-align:center; color:#db2777;">
                     <div class="icon">⚠️</div>
                     <div>Ошибка загрузки данных</div>
                     <div style="font-size:0.8rem; color:var(--text-muted);">${err.message}</div>
