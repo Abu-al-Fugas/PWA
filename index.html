@@ -3,15 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Мониторинг СМТ — Космос</title>
+    <title>СМТ Мониторинг — Космос</title>
     
-    <!-- PWA Meta -->
     <meta name="theme-color" content="#0a0e1a">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="СМТ Мониторинг">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogItCh0JzQoiDQnNC+0L3QuNGC0L7RgNC40L3QsyIsCiAgInNob3J0X25hbWUiOiAi0KHQnNKoINCc0L7QvdC40YLQvtGA0LjQvdCzIiwKICAiZGVzY3JpcHRpb24iOiAi0JzQvtC90LjRgtC+0YDQuNC90LMg0YPRgdGC0LDQvdC+0LLQutCgINCf0JDQryDQodCc0KIiLAogICJzdGFydF91cmwiOiAiLiIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiIzBhMGUxYSIsCiAgInRoZW1lX2NvbG9yIjogIiMwYTBjMTgiLAogICJpY29ucyI6IFsKICAgIHsKICAgICAgInNyYyI6ICJkYXRhOmltYWdlL3N2Zyt4bWwsJTNDc3ZnIHhtbG5zPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Zycgdmlld0JveD0nMCAwIDUxMiA1MTInJTNFJTNDcmVjdCB3aWR0aD0nNTEyJyBoZWlnaHQ9JzUxMicgcng9JzUwJyBmaWxsPSclMjMwYTBlMWEnLyUzRSUzQ3RleHQgeD0nMjU2JyB5PScyNzAnIGZvbnQtc2l6ZT0nMjUwJyB0ZXh0LWFuY2hvcj0nbWlkZGxlJyBmaWxsPSclMjMwMGQ0ZmYnIGZvbnQtZmFtaWx5PSdPcmJpdHJvbixzYW5zLXNlcmlmJyUzRfKmiyUzQy90ZXh0JTNFJTNDL3N2ZyUzRQoiLAogICAgICAic2l6ZXMiOiAiNTEyeDUxMiIsCiAgICAgICJ0eXBlIjogImltYWdlL3N2Zyt4bWwiCiAgICB9CiAgXQp9">
+    
+    <link rel="apple-touch-icon" href="icon.png">
+    
+    <link rel="manifest" href="manifest.json">
 
-    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -181,7 +183,7 @@
             text-align: center;
             display: flex;
             flex-direction: column;
-            justify-content: center; /* вертикальное центрирование для всех блоков */
+            justify-content: center;
             align-items: center;
         }
         .stat-card::before {
@@ -289,7 +291,7 @@
             color: var(--text-secondary);
             border-bottom: 1px solid rgba(255,255,255,0.06);
             text-transform: uppercase;
-            display: none; /* скрываем заголовок "Монтажники" */
+            display: none;
         }
         .table-responsive {
             overflow-x: auto;
@@ -375,7 +377,7 @@
             display: block;
         }
         .action-btn .btn-text {
-            display: none; /* скрываем слово "Детализация" */
+            display: none;
         }
 
         /* ===== Вкладка "Таблица" (мониторинг) ===== */
@@ -642,7 +644,6 @@
             .installer-name { max-width: 80px; }
         }
 
-        /* ===== Анимация появления ===== */
         .stat-card {
             opacity: 0;
             transform: translateY(20px);
@@ -675,19 +676,17 @@
             </nav>
         </header>
 
-        <!-- ===== Вкладка "Сводка" ===== -->
         <div id="summary" class="tab-content active">
             <div class="stats-grid" id="statsGrid"></div>
 
             <div class="table-container">
-                <div class="table-header">Монтажники</div> <!-- скрыт через display:none -->
                 <div class="table-responsive">
                     <table>
                         <thead>
                             <tr>
                                 <th>Имя</th>
-                                <th style="text-align:center;">Устан.</th> <!-- сократили -->
-                                <th style="text-align:right;">Детально</th> <!-- сократили -->
+                                <th style="text-align:center;">Устан.</th>
+                                <th style="text-align:right;">Детально</th>
                             </tr>
                         </thead>
                         <tbody id="summaryTableBody"></tbody>
@@ -696,7 +695,6 @@
             </div>
         </div>
 
-        <!-- ===== Вкладка "Таблица" (мониторинг) ===== -->
         <div id="fullTable" class="tab-content">
             <div class="table-container">
                 <div class="table-toolbar">
@@ -732,7 +730,6 @@
         </div>
     </div>
 
-    <!-- Модалка детализации -->
     <div class="modal-overlay" id="detailsModal">
         <div class="modal">
             <div class="modal-header">
@@ -843,28 +840,18 @@
             return new Date(year, month, day, hour, minute);
         }
 
-        function isInFilterMonth(item) {
-            return true;
-        }
-
-        // ===== Функция для извлечения типоразмера из модели =====
         function extractMeterSize(model) {
             if (!model) return '—';
-            // Ищем паттерн G с цифрой (G4, G6, G10, G16, G25, G40, G65)
             const match = model.match(/G(\d{1,2})/i);
             if (match) {
                 return 'G' + match[1];
             }
-            // Если не нашли, возвращаем как есть, но обрезаем до первых 10 символов
             return model.substring(0, 10);
         }
 
-        // ===== Рендеринг статистики =====
         function renderStats() {
             const grid = document.getElementById('statsGrid');
-            const total = dbList.length;
-            const filtered = dbList;
-            const totalFiltered = filtered.length;
+            const totalFiltered = dbList.length;
 
             const now = new Date();
             const todayStart = new Date(now);
@@ -872,22 +859,21 @@
             const todayEnd = new Date(now);
             todayEnd.setHours(23, 59, 59, 999);
             let todayCount = 0;
-            filtered.forEach(item => {
+            dbList.forEach(item => {
                 const d = parseDateFromString(item.date);
                 if (d && d >= todayStart && d <= todayEnd) todayCount++;
             });
 
             let totalPower = 0;
-            filtered.forEach(item => {
+            dbList.forEach(item => {
                 if (item.totalPower) {
                     const val = parseFloat(item.totalPower.replace(',', '.'));
                     if (!isNaN(val)) totalPower += val;
                 }
             });
 
-            // Группировка по типоразмеру (извлекаем G-значение)
             const sizeCount = {};
-            filtered.forEach(item => {
+            dbList.forEach(item => {
                 if (item.model) {
                     const size = extractMeterSize(item.model);
                     if (size && size !== '—') {
@@ -896,7 +882,6 @@
                 }
             });
             const sortedSizes = Object.entries(sizeCount).sort((a, b) => {
-                // Сортировка по числовому значению G (G4, G6, G10...)
                 const numA = parseInt(a[0].replace('G', ''));
                 const numB = parseInt(b[0].replace('G', ''));
                 return numA - numB;
@@ -945,7 +930,6 @@
             `;
         }
 
-        // ===== Детали за сегодня =====
         function showTodayDetails() {
             const now = new Date();
             const todayStart = new Date(now);
@@ -1000,13 +984,10 @@
             openModal('detailsModal');
         }
 
-        // ===== Сводка по монтажникам =====
         function renderSummary() {
             const tbody = document.getElementById('summaryTableBody');
-            const filtered = dbList;
-
             const stats = {};
-            filtered.forEach(item => {
+            dbList.forEach(item => {
                 const installer = item.installer || 'Неизвестно';
                 if (!stats[installer]) stats[installer] = { count: 0, records: [] };
                 stats[installer].count++;
@@ -1027,7 +1008,6 @@
                             <td style="text-align:right;">
                                 <button class="action-btn" onclick="showInstallerDetails('${inst}')" title="Детализация">
                                     <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
-                                    <span class="btn-text">Детализация</span>
                                 </button>
                             </td>
                         </tr>
@@ -1037,7 +1017,6 @@
             tbody.innerHTML = html;
         }
 
-        // ===== Детализация по монтажнику =====
         function showInstallerDetails(installer) {
             const records = dbList.filter(item => item.installer === installer);
 
@@ -1091,16 +1070,13 @@
             openModal('detailsModal');
         }
 
-        // ===== Таблица мониторинга =====
         function renderFullTable() {
             const tbody = document.getElementById('fullTableBody');
-            const filtered = dbList;
-
             let html = '';
-            if (filtered.length === 0) {
+            if (dbList.length === 0) {
                 html = `<tr><td colspan="14" style="text-align:center; padding:24px; color:var(--text-muted);">Нет записей</td></tr>`;
             } else {
-                filtered.forEach(item => {
+                dbList.forEach(item => {
                     html += `<tr>
                         <td>${item.installer || '-'}</td>
                         <td>${item.objectName || '-'}</td>
@@ -1122,7 +1098,6 @@
             tbody.innerHTML = html;
         }
 
-        // ===== Экспорт в Excel =====
         function exportToExcel() {
             if (dbList.length === 0) {
                 alert('Нет данных для выгрузки.');
@@ -1137,7 +1112,7 @@
             ];
 
             let html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
-            html += '<head><meta charset="utf-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Установки</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head>';
+            html += '<head><meta charset="utf-8"></head>';
             html += '<body><table>';
 
             html += '<tr>';
@@ -1184,14 +1159,12 @@
             URL.revokeObjectURL(url);
         }
 
-        // ===== Общий рендеринг =====
         function renderAll() {
             renderStats();
             renderSummary();
             renderFullTable();
         }
 
-        // ===== Firebase =====
         firebase.database().ref('.info/connected').on('value', snap => {
             const dot = document.getElementById('connDot');
             const text = document.getElementById('connText');
@@ -1234,9 +1207,6 @@
             `;
         });
 
-        // ============================================================
-        // 3. ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК
-        // ============================================================
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -1248,35 +1218,14 @@
             });
         });
 
-        // ============================================================
-        // 4. SERVICE WORKER ДЛЯ PWA
-        // ============================================================
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('data:application/javascript;base64,' + btoa(`
-                self.addEventListener('install', e => {
-                    e.waitUntil(
-                        caches.open('smt-cache-v1').then(cache => {
-                            return cache.addAll(['/']);
-                        })
-                    );
-                });
-                self.addEventListener('fetch', e => {
-                    e.respondWith(
-                        caches.match(e.request).then(response => {
-                            return response || fetch(e.request);
-                        })
-                    );
-                });
-            `)).then(() => {
+            navigator.serviceWorker.register('sw.js').then(() => {
                 console.log('SW registered');
             }).catch(err => {
                 console.warn('SW registration failed:', err);
             });
         }
 
-        // ============================================================
-        // 5. ИНИЦИАЛИЗАЦИЯ
-        // ============================================================
         renderAll();
     </script>
 </body>
