@@ -1,9 +1,8 @@
 const CACHE_NAME = 'smt-cache-v1';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icon.png'
+  'index.html',
+  'manifest.json',
+  'icon.png'
 ];
 
 self.addEventListener('install', event => {
