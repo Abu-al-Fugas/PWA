@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Мониторинг СМТ</title>
 
-    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -14,21 +13,21 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
-        /* ===== Космическая тема ===== */
+        /* ===== Светлая и мягкая тема палитры (как в мобильной версии) ===== */
         :root {
-            --bg-primary: #0a0e1a;
-            --bg-secondary: #111629;
-            --glass-bg: rgba(255, 255, 255, 0.04);
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --text-primary: #f0f4ff;
-            --text-secondary: #a0b4d9;
-            --text-muted: #6a7fa0;
-            --accent-cyan: #00d4ff;
-            --accent-blue: #4f7cff;
-            --accent-purple: #8b5cf6;
-            --accent-orange: #f59e0b;
-            --accent-pink: #f472b6;
-            --shadow-glow: 0 0 30px rgba(0, 212, 255, 0.15);
+            --bg-primary: #f0f2f5;
+            --bg-secondary: #ffffff;
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(0, 0, 0, 0.08);
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --text-muted: #64748b;
+            --accent-cyan: #0284c7;
+            --accent-blue: #2563eb;
+            --accent-purple: #7c3aed;
+            --accent-orange: #d97706;
+            --accent-pink: #db2777;
+            --shadow-glow: 0 4px 20px rgba(0, 0, 0, 0.05);
             --radius: 16px;
         }
 
@@ -43,12 +42,12 @@
             background: var(--bg-primary);
             color: var(--text-primary);
             min-height: 100vh;
-            padding: 20px;
+            padding: 24px;
             position: relative;
             overflow-x: hidden;
         }
 
-        /* ===== Звёздный фон ===== */
+        /* ===== Светлый фон с движущимися частицами ===== */
         #stars-canvas {
             position: fixed;
             top: 0;
@@ -62,7 +61,7 @@
         .app-wrapper {
             position: relative;
             z-index: 1;
-            max-width: 1400px;
+            max-width: 1600px;
             margin: 0 auto;
         }
 
@@ -71,19 +70,19 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 16px 28px;
+            padding: 18px 32px;
             background: var(--glass-bg);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border: 1px solid var(--glass-border);
             border-radius: var(--radius);
-            margin-bottom: 28px;
+            margin-bottom: 32px;
             box-shadow: var(--shadow-glow);
         }
         .logo {
             font-family: 'Orbitron', sans-serif;
             font-weight: 700;
-            font-size: 1.5rem;
+            font-size: 1.6rem;
             letter-spacing: 0.05em;
             background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
             -webkit-background-clip: text;
@@ -93,15 +92,15 @@
         .status {
             display: flex;
             align-items: center;
-            gap: 10px;
-            font-size: 0.85rem;
+            gap: 12px;
+            font-size: 0.9rem;
             color: var(--text-secondary);
         }
         .dot {
             width: 10px;
             height: 10px;
             border-radius: 50%;
-            background: #4a5a7a;
+            background: #94a3b8;
             transition: background 0.4s, box-shadow 0.4s;
         }
         .dot.online {
@@ -110,22 +109,22 @@
             animation: pulse-dot 2s infinite;
         }
         @keyframes pulse-dot {
-            0% { box-shadow: 0 0 0 0 rgba(0, 212, 255, 0.5); }
-            70% { box-shadow: 0 0 20px 6px rgba(0, 212, 255, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(0, 212, 255, 0); }
+            0% { box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.5); }
+            70% { box-shadow: 0 0 20px 6px rgba(2, 132, 199, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(2, 132, 199, 0); }
         }
 
-        /* ===== Навигация (вкладки) ===== */
+        /* ===== Навигация ===== */
         nav {
             display: flex;
-            gap: 20px;
+            gap: 24px;
         }
         nav .tab-btn {
             background: none;
             border: none;
             color: var(--text-secondary);
             font-family: 'Inter', sans-serif;
-            font-size: 0.95rem;
+            font-size: 1rem;
             font-weight: 500;
             cursor: pointer;
             padding: 6px 0;
@@ -140,39 +139,44 @@
             border-bottom-color: var(--accent-cyan);
         }
 
-        /* ===== Табы-контейнеры ===== */
+        /* ===== Содержимое вкладок ===== */
         .tab-content {
             display: none;
-            animation: fadeIn 0.2s ease;
+            animation: fadeIn 0.25s ease;
         }
         .tab-content.active {
             display: block;
         }
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(6px); }
+            from { opacity: 0; transform: translateY(8px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* ===== Стили для вкладки "Сводка" ===== */
+        /* ===== Сетка карточек статистики ===== */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 18px;
-            margin-bottom: 30px;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+            margin-bottom: 32px;
         }
         .stat-card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+            background: var(--bg-secondary);
             border: 1px solid var(--glass-border);
             border-radius: var(--radius);
-            padding: 20px 18px;
+            padding: 24px;
             box-shadow: var(--shadow-glow);
             transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s;
             cursor: default;
             position: relative;
             overflow: hidden;
             text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: cardAppear 0.5s ease forwards;
         }
         .stat-card::before {
             content: '';
@@ -181,35 +185,36 @@
             left: -50%;
             width: 200%;
             height: 200%;
-            background: radial-gradient(circle at 30% 40%, rgba(0,212,255,0.03), transparent 70%);
+            background: radial-gradient(circle at 30% 40%, rgba(2,132,199,0.03), transparent 70%);
             pointer-events: none;
         }
         .stat-card:hover {
             transform: translateY(-5px);
-            border-color: rgba(0, 212, 255, 0.25);
-            box-shadow: 0 8px 40px rgba(0, 212, 255, 0.12);
+            border-color: rgba(2, 132, 199, 0.25);
+            box-shadow: 0 12px 40px rgba(2, 132, 199, 0.12);
         }
         .stat-card .icon {
-            font-size: 1.5rem;
+            font-size: 1.8rem;
             line-height: 1;
-            margin-bottom: 8px;
-            opacity: 0.8;
+            margin-bottom: 10px;
+            opacity: 0.85;
         }
         .stat-card .number {
             font-family: 'Orbitron', sans-serif;
             font-weight: 700;
-            font-size: 2rem;
+            font-size: 2.4rem;
             color: var(--text-primary);
             letter-spacing: 0.02em;
             line-height: 1.2;
         }
         .stat-card .label {
-            font-size: 0.8rem;
+            font-size: 0.9rem;
             color: var(--text-secondary);
-            margin-top: 4px;
+            margin-top: 6px;
+            font-weight: 500;
         }
         .stat-card .sub {
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             color: var(--text-muted);
             margin-top: 2px;
         }
@@ -218,84 +223,90 @@
         .stat-card.accent-purple .number { color: var(--accent-purple); }
         .stat-card.accent-orange .number { color: var(--accent-orange); }
         .stat-card.accent-pink .number { color: var(--accent-pink); }
-        .stat-card.accent-green .number { color: #34d399; }
+        .stat-card.accent-green .number { color: #16a34a; }
 
         .stat-card.clickable {
             cursor: pointer;
         }
         .stat-card.clickable:hover {
             border-color: var(--accent-cyan);
-            box-shadow: 0 8px 40px rgba(0, 212, 255, 0.18);
+            box-shadow: 0 12px 40px rgba(2, 132, 199, 0.18);
         }
 
+        /* Анимация карточек */
+        .stat-card:nth-child(1) { animation-delay: 0.05s; }
+        .stat-card:nth-child(2) { animation-delay: 0.1s; }
+        .stat-card:nth-child(3) { animation-delay: 0.15s; }
+        .stat-card:nth-child(4) { animation-delay: 0.2s; }
+
+        @keyframes cardAppear {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Список типоразмеров внутри карточки */
         .model-list {
-            margin-top: 6px;
+            margin-top: 8px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 2px;
+            gap: 4px;
+            width: 100%;
         }
         .model-item {
             display: flex;
             justify-content: space-between;
             width: 100%;
-            max-width: 200px;
-            font-size: 0.85rem;
+            max-width: 220px;
+            font-size: 0.9rem;
             color: var(--text-secondary);
-            border-bottom: 1px solid rgba(255,255,255,0.04);
-            padding: 2px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.04);
+            padding: 3px 0;
         }
         .model-item .model-name {
             color: var(--text-primary);
             font-weight: 400;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 140px;
         }
         .model-item .model-count {
             font-weight: 600;
             color: var(--accent-cyan);
+            flex-shrink: 0;
+            margin-left: 8px;
         }
 
+        /* ===== Контейнеры таблиц ===== */
         .table-container {
-            background: var(--glass-bg);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+            background: var(--bg-secondary);
             border: 1px solid var(--glass-border);
             border-radius: var(--radius);
             overflow: hidden;
             box-shadow: var(--shadow-glow);
         }
-        .table-header {
-            padding: 16px 24px;
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 600;
-            font-size: 1rem;
-            letter-spacing: 0.03em;
-            color: var(--text-secondary);
-            border-bottom: 1px solid rgba(255,255,255,0.06);
-            text-transform: uppercase;
-        }
         .table-responsive {
             overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
         }
         th {
             text-align: left;
-            padding: 14px 20px;
+            padding: 16px 24px;
             color: var(--text-secondary);
-            font-weight: 500;
-            font-size: 0.75rem;
+            font-weight: 600;
+            font-size: 0.8rem;
             text-transform: uppercase;
             letter-spacing: 0.06em;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
-            background: rgba(0,0,0,0.2);
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+            background: #f8fafc;
         }
         td {
-            padding: 14px 20px;
-            border-bottom: 1px solid rgba(255,255,255,0.04);
+            padding: 16px 24px;
+            border-bottom: 1px solid rgba(0,0,0,0.04);
             vertical-align: middle;
             color: var(--text-primary);
         }
@@ -303,7 +314,7 @@
             border-bottom: none;
         }
         tr:hover td {
-            background: rgba(255,255,255,0.03);
+            background: #f1f5f9;
         }
         .installer-name {
             font-weight: 600;
@@ -312,74 +323,70 @@
         }
         .count-badge {
             font-weight: 600;
+            font-size: 1rem;
             color: var(--text-primary);
-            font-family: 'Inter', sans-serif;
-            font-size: 0.95rem;
-            background: none;
-            padding: 0;
-            border: none;
         }
+
+        /* Кнопка действия */
         .action-btn {
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.08);
+            background: #f8fafc;
+            border: 1px solid rgba(0,0,0,0.08);
             color: var(--text-secondary);
-            padding: 6px 16px;
+            padding: 8px 14px;
             border-radius: 8px;
             cursor: pointer;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             font-weight: 500;
             transition: all 0.25s;
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 6px;
             font-family: 'Inter', sans-serif;
         }
         .action-btn:hover {
-            background: rgba(0, 212, 255, 0.08);
+            background: rgba(2, 132, 199, 0.08);
             border-color: var(--accent-cyan);
             color: var(--accent-cyan);
-            box-shadow: 0 0 20px rgba(0, 212, 255, 0.1);
+            box-shadow: 0 0 20px rgba(2, 132, 199, 0.1);
         }
         .action-btn svg {
-            width: 16px;
-            height: 16px;
+            width: 18px;
+            height: 18px;
             stroke: currentColor;
             stroke-width: 2;
             fill: none;
+            display: block;
         }
 
-        /* ===== Вкладка "Таблица" (мониторинг) ===== */
+        /* ===== Вкладка полного мониторинга (Таблица) ===== */
         #fullTable {
             padding: 0;
             margin: 0;
         }
         #fullTable .table-container {
             border-radius: var(--radius);
-            background: var(--bg-primary);
+            background: var(--bg-secondary);
             border: 1px solid var(--glass-border);
             box-shadow: var(--shadow-glow);
-            backdrop-filter: none;
         }
-        #fullTable .table-header {
-            display: none; /* скрываем стандартный заголовок, используем свой */
-        }
-        /* Собственный заголовок с кнопкой экспорта */
         #fullTable .table-toolbar {
             display: flex;
             justify-content: flex-end;
             align-items: center;
-            padding: 12px 20px;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
+            padding: 14px 24px;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+            background: #f8fafc;
         }
         #fullTable .table-toolbar .export-btn {
-            background: rgba(0, 212, 255, 0.08);
+            background: rgba(2, 132, 199, 0.08);
             border: 1px solid var(--accent-cyan);
             color: var(--accent-cyan);
-            padding: 6px 18px;
+            padding: 8px 20px;
             border-radius: 8px;
             cursor: pointer;
             font-family: 'Inter', sans-serif;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             font-weight: 500;
             transition: all 0.25s;
             display: inline-flex;
@@ -387,61 +394,35 @@
             gap: 8px;
         }
         #fullTable .table-toolbar .export-btn:hover {
-            background: rgba(0, 212, 255, 0.15);
-            box-shadow: 0 0 20px rgba(0, 212, 255, 0.15);
-        }
-        #fullTable .table-responsive {
-            background: var(--bg-primary);
-            border-radius: 0 0 var(--radius) var(--radius);
-            overflow-x: auto;
+            background: rgba(2, 132, 199, 0.15);
+            box-shadow: 0 0 20px rgba(2, 132, 199, 0.15);
         }
         #fullTable table {
             font-family: Arial, sans-serif;
-            font-size: 0.75rem;
-            color: #ffffff;
-            background: #0d1117;
-            border-collapse: collapse;
-            width: 100%;
-            table-layout: auto;
+            font-size: 0.8rem;
+            color: var(--text-primary);
         }
         #fullTable table th,
         #fullTable table td {
-            padding: 6px 8px;
-            border: none;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
+            padding: 8px 12px;
             white-space: nowrap;
             text-align: left;
-            vertical-align: middle;
         }
         #fullTable table th {
-            background: #0a0e1a;
-            color: #ffffff;
+            background: #f1f5f9;
+            color: #1e293b;
             font-weight: 600;
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             text-transform: uppercase;
             letter-spacing: 0.04em;
             position: sticky;
             top: 0;
             z-index: 10;
-            border-bottom: 2px solid #1e2a3a;
-            padding: 8px 8px;
+            border-bottom: 2px solid #cbd5e1;
         }
         #fullTable table td {
-            color: #e6edf5;
-            font-weight: 400;
-        }
-        #fullTable table tr:hover td {
-            background: rgba(255,255,255,0.03);
-        }
-        /* Скрываем лишние элементы */
-        #fullTable .action-btn,
-        #fullTable .edit-single-btn,
-        #fullTable .del-single-btn,
-        #fullTable .row-checkbox,
-        #fullTable #selectAllCheckbox,
-        #fullTable .sort-icon,
-        #fullTable .inline-edit-input {
-            display: none !important;
+            color: #334155;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
         }
 
         /* ===== Модальное окно ===== */
@@ -452,7 +433,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(5, 8, 20, 0.8);
+            background: rgba(15, 23, 42, 0.4);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
             z-index: 2000;
@@ -465,31 +446,31 @@
         }
         .modal {
             background: var(--bg-secondary);
-            border: 1px solid rgba(255,255,255,0.08);
+            border: 1px solid rgba(0,0,0,0.08);
             border-radius: var(--radius);
-            max-width: 720px;
+            max-width: 750px;
             width: 100%;
             max-height: 85vh;
             display: flex;
             flex-direction: column;
-            box-shadow: 0 32px 80px rgba(0,0,0,0.7), 0 0 60px rgba(0, 212, 255, 0.05);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.1), 0 0 60px rgba(2, 132, 199, 0.05);
             animation: modalFade 0.25s ease;
         }
         @keyframes modalFade {
-            from { opacity: 0; transform: scale(0.96) translateY(20px); }
+            from { opacity: 0; transform: scale(0.97) translateY(20px); }
             to { opacity: 1; transform: scale(1) translateY(0); }
         }
         .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 18px 24px;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
+            padding: 20px 28px;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
         }
         .modal-header h3 {
             font-family: 'Orbitron', sans-serif;
             font-weight: 600;
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             color: var(--text-primary);
             letter-spacing: 0.02em;
         }
@@ -497,50 +478,49 @@
             background: none;
             border: none;
             color: var(--text-muted);
-            font-size: 1.6rem;
+            font-size: 1.8rem;
             cursor: pointer;
             transition: color 0.2s;
             line-height: 1;
-            padding: 0 4px;
         }
         .modal-close:hover {
             color: var(--text-primary);
         }
         .modal-body {
-            padding: 20px 24px;
+            padding: 24px 28px;
             overflow-y: auto;
             flex: 1;
         }
         .modal-body .empty-state {
             text-align: center;
             color: var(--text-muted);
-            padding: 30px 0;
+            padding: 40px 0;
         }
         .day-group {
-            margin-bottom: 20px;
+            margin-bottom: 24px;
         }
         .day-group .day-title {
             font-family: 'Orbitron', sans-serif;
             font-weight: 500;
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             letter-spacing: 0.04em;
             color: var(--accent-cyan);
-            background: rgba(0, 212, 255, 0.06);
-            padding: 4px 14px;
+            background: rgba(2, 132, 199, 0.06);
+            padding: 4px 16px;
             border-radius: 20px;
             display: inline-block;
-            margin-bottom: 10px;
-            border: 1px solid rgba(0, 212, 255, 0.08);
+            margin-bottom: 12px;
+            border: 1px solid rgba(2, 132, 199, 0.08);
         }
         .record-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 8px 12px;
+            padding: 10px 16px;
             border-radius: 8px;
-            background: rgba(255,255,255,0.02);
-            margin-bottom: 4px;
-            border-left: 2px solid rgba(0, 212, 255, 0.1);
+            background: #f8fafc;
+            margin-bottom: 6px;
+            border-left: 3px solid rgba(2, 132, 199, 0.3);
         }
         .record-item .record-main {
             display: flex;
@@ -551,34 +531,34 @@
             color: var(--text-primary);
         }
         .record-item .record-main .serial {
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             color: var(--text-muted);
         }
         .record-item .record-meta {
             text-align: right;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             color: var(--text-secondary);
         }
         .record-item .record-meta .time {
             font-weight: 700;
-            font-size: 0.95rem;
+            font-size: 1rem;
             color: var(--text-primary);
             letter-spacing: 0.02em;
         }
         .record-item .record-meta .object-name {
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             color: var(--text-muted);
         }
         .modal-footer {
-            padding: 12px 24px 18px;
-            border-top: 1px solid rgba(255,255,255,0.06);
+            padding: 16px 28px 20px;
+            border-top: 1px solid rgba(0,0,0,0.06);
             display: flex;
             justify-content: flex-end;
         }
         .modal-footer .btn-close {
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.08);
-            padding: 8px 24px;
+            background: #f1f5f9;
+            border: 1px solid rgba(0,0,0,0.08);
+            padding: 10px 28px;
             border-radius: 8px;
             font-weight: 500;
             color: var(--text-secondary);
@@ -587,43 +567,8 @@
             font-family: 'Inter', sans-serif;
         }
         .modal-footer .btn-close:hover {
-            background: rgba(255,255,255,0.12);
+            background: #e2e8f0;
             color: var(--text-primary);
-        }
-
-        /* ===== Адаптив ===== */
-        @media (max-width: 768px) {
-            body { padding: 12px; }
-            .header { flex-direction: column; align-items: stretch; gap: 10px; padding: 16px; }
-            .logo { text-align: center; font-size: 1.3rem; }
-            .status { justify-content: center; }
-            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
-            .stat-card .number { font-size: 1.6rem; }
-            .modal { max-width: 100%; margin: 10px; }
-            nav { justify-content: center; }
-            #fullTable table { font-size: 0.6rem; }
-            #fullTable table th,
-            #fullTable table td { padding: 4px 6px; }
-        }
-        @media (max-width: 480px) {
-            .stats-grid { grid-template-columns: 1fr 1fr; }
-            .table-header { font-size: 0.85rem; padding: 12px 16px; }
-            th, td { padding: 10px 12px; font-size: 0.8rem; }
-        }
-
-        /* ===== Анимация появления ===== */
-        .stat-card {
-            opacity: 0;
-            transform: translateY(20px);
-            animation: cardAppear 0.5s ease forwards;
-        }
-        .stat-card:nth-child(1) { animation-delay: 0.05s; }
-        .stat-card:nth-child(2) { animation-delay: 0.1s; }
-        .stat-card:nth-child(3) { animation-delay: 0.15s; }
-        .stat-card:nth-child(4) { animation-delay: 0.2s; }
-
-        @keyframes cardAppear {
-            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
@@ -633,10 +578,10 @@
 
     <div class="app-wrapper">
         <header class="header">
-            <div class="logo">✦ СМТ Мониторинг</div>
+            <div class="logo">✦ Мониторинг СМТ</div>
             <div class="status">
                 <span class="dot" id="connDot"></span>
-                <span id="connText">Подключение…</span>
+                <span id="connText">Подключение к системе…</span>
             </div>
             <nav>
                 <button class="tab-btn active" data-target="summary">Сводка</button>
@@ -644,19 +589,17 @@
             </nav>
         </header>
 
-        <!-- ===== Вкладка "Сводка" ===== -->
         <div id="summary" class="tab-content active">
             <div class="stats-grid" id="statsGrid"></div>
 
             <div class="table-container">
-                <div class="table-header">Монтажники</div>
                 <div class="table-responsive">
                     <table>
                         <thead>
                             <tr>
-                                <th>Имя</th>
-                                <th style="text-align:center;">Установок</th>
-                                <th style="text-align:right;">Действие</th>
+                                <th>Монтажник</th>
+                                <th style="text-align: center;">Всего установок</th>
+                                <th style="text-align: right;">Действия</th>
                             </tr>
                         </thead>
                         <tbody id="summaryTableBody"></tbody>
@@ -665,13 +608,12 @@
             </div>
         </div>
 
-        <!-- ===== Вкладка "Таблица" (мониторинг) ===== -->
         <div id="fullTable" class="tab-content">
             <div class="table-container">
                 <div class="table-toolbar">
                     <button class="export-btn" onclick="exportToExcel()">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M8 8h8v8H8z"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
-                        Выгрузить в XLS
+                        Экспорт в XLS
                     </button>
                 </div>
                 <div class="table-responsive">
@@ -701,7 +643,6 @@
         </div>
     </div>
 
-    <!-- Модалка детализации -->
     <div class="modal-overlay" id="detailsModal">
         <div class="modal">
             <div class="modal-header">
@@ -709,7 +650,7 @@
                 <button class="modal-close" onclick="closeModal('detailsModal')">&times;</button>
             </div>
             <div class="modal-body" id="detailsBody">
-                <div class="empty-state">Загрузка…</div>
+                <div class="empty-state">Загрузка данных…</div>
             </div>
             <div class="modal-footer">
                 <button class="btn-close" onclick="closeModal('detailsModal')">Закрыть</button>
@@ -719,14 +660,14 @@
 
     <script>
         // ============================================================
-        // 1. ЗВЁЗДНЫЙ ФОН
+        // 1. АНИМАЦИЯ ЧАСТИЦ (Светло-синие на светлом фоне)
         // ============================================================
         (function initStars() {
             const canvas = document.getElementById('stars-canvas');
             const ctx = canvas.getContext('2d');
             let W, H;
             const stars = [];
-            const NUM_STARS = 220;
+            const NUM_STARS = 120;
             const MAX_SPEED = 0.4;
 
             function resize() {
@@ -740,9 +681,9 @@
                 stars.push({
                     x: Math.random() * W,
                     y: Math.random() * H,
-                    r: Math.random() * 1.2 + 0.5,
+                    r: Math.random() * 1.5 + 0.5,
                     speed: Math.random() * MAX_SPEED + 0.1,
-                    opacity: Math.random() * 0.8 + 0.2,
+                    opacity: Math.random() * 0.4 + 0.1,
                 });
             }
 
@@ -751,10 +692,10 @@
                 for (const s of stars) {
                     ctx.beginPath();
                     ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-                    ctx.fillStyle = `rgba(255, 255, 255, ${s.opacity})`;
+                    ctx.fillStyle = `rgba(37, 99, 235, ${s.opacity})`;
                     ctx.fill();
-                    s.opacity += (Math.random() - 0.5) * 0.02;
-                    s.opacity = Math.min(1, Math.max(0.2, s.opacity));
+                    s.opacity += (Math.random() - 0.5) * 0.01;
+                    s.opacity = Math.min(0.5, Math.max(0.1, s.opacity));
                     s.y += s.speed * 0.3;
                     if (s.y > H) {
                         s.y = 0;
@@ -767,7 +708,7 @@
         })();
 
         // ============================================================
-        // 2. FIREBASE + ЛОГИКА
+        // 2. FIREBASE И ЛОГИКА РАБОТЫ С ДАННЫМИ
         // ============================================================
         const firebaseConfig = {
             apiKey: "AIzaSyCofoBIWqUX_P8pQUIKKbitEG2GTbXT7Ak",
@@ -812,29 +753,18 @@
             return new Date(year, month, day, hour, minute);
         }
 
-        // Фильтр по дате удалён – всегда показываем все данные
-        function isInFilterMonth(item) {
-            return true; // больше не фильтруем
+        function extractMeterSize(model) {
+            if (!model) return '—';
+            const match = model.match(/G(\d{1,2})/i);
+            if (match) {
+                return 'G' + match[1];
+            }
+            return model.substring(0, 10);
         }
 
-        // ===== Нормализация названия модели =====
-        function normalizeModel(model) {
-            if (!model) return '';
-            let m = model.trim();
-            m = m.replace(/CMT/gi, 'СМТ');
-            m = m.replace(/\s*-\s*/g, '-');
-            m = m.replace(/\s+/g, ' ');
-            return m;
-        }
-
-        // ===== Рендеринг статистики (сводка) =====
         function renderStats() {
             const grid = document.getElementById('statsGrid');
-
-            const total = dbList.length;
-            const filtered = dbList; // без фильтра
-
-            const totalFiltered = filtered.length;
+            const totalFiltered = dbList.length;
 
             const now = new Date();
             const todayStart = new Date(now);
@@ -842,44 +772,48 @@
             const todayEnd = new Date(now);
             todayEnd.setHours(23, 59, 59, 999);
             let todayCount = 0;
-            filtered.forEach(item => {
+            dbList.forEach(item => {
                 const d = parseDateFromString(item.date);
                 if (d && d >= todayStart && d <= todayEnd) todayCount++;
             });
 
             let totalPower = 0;
-            filtered.forEach(item => {
+            dbList.forEach(item => {
                 if (item.totalPower) {
                     const val = parseFloat(item.totalPower.replace(',', '.'));
                     if (!isNaN(val)) totalPower += val;
                 }
             });
 
-            const modelCount = {};
-            filtered.forEach(item => {
+            const sizeCount = {};
+            dbList.forEach(item => {
                 if (item.model) {
-                    const normalized = normalizeModel(item.model);
-                    if (normalized) {
-                        modelCount[normalized] = (modelCount[normalized] || 0) + 1;
+                    const size = extractMeterSize(item.model);
+                    if (size && size !== '—') {
+                        sizeCount[size] = (sizeCount[size] || 0) + 1;
                     }
                 }
             });
-            const sortedModels = Object.entries(modelCount).sort((a, b) => b[1] - a[1]);
+            const sortedSizes = Object.entries(sizeCount).sort((a, b) => {
+                const numA = parseInt(a[0].replace('G', ''));
+                const numB = parseInt(b[0].replace('G', ''));
+                return numA - numB;
+            });
 
-            let modelsHtml = '';
-            if (sortedModels.length === 0) {
-                modelsHtml = '<div style="color:var(--text-muted); font-size:0.85rem;">Нет данных</div>';
+            let sizesHtml = '';
+            if (sortedSizes.length === 0) {
+                sizesHtml = '<div style="color:var(--text-muted); font-size:0.9rem;">Нет данных</div>';
             } else {
-                modelsHtml = '<div class="model-list">';
-                sortedModels.forEach(([model, count]) => {
-                    modelsHtml += `
+                sizesHtml = '<div class="model-list">';
+                sortedSizes.forEach(([size, count]) => {
+                    sizesHtml += `
                         <div class="model-item">
-                            <span class="model-name">${model}</span>
+                            <span class="model-name" title="${size}">${size}</span>
                             <span class="model-count">${count}</span>
                         </div>
                     `;
                 });
-                modelsHtml += '</div>';
+                sizesHtml += '</div>';
             }
 
             grid.innerHTML = `
@@ -887,13 +821,13 @@
                     <div class="icon">📊</div>
                     <div class="number">${totalFiltered}</div>
                     <div class="label">Всего установок</div>
-                    <div class="sub">в базе</div>
+                    <div class="sub">в базе данных</div>
                 </div>
                 <div class="stat-card accent-green clickable" onclick="showTodayDetails()" title="Нажмите для деталей">
                     <div class="icon">📅</div>
                     <div class="number">${todayCount}</div>
                     <div class="label">Сегодня (с 7:00)</div>
-                    <div class="sub">за день</div>
+                    <div class="sub">за текущие сутки</div>
                 </div>
                 <div class="stat-card accent-pink">
                     <div class="icon">⚡</div>
@@ -901,15 +835,14 @@
                     <div class="label">Суммарная мощность</div>
                     <div class="sub">м³/ч</div>
                 </div>
-                <div class="stat-card accent-purple" style="grid-column: span 1;">
+                <div class="stat-card accent-purple">
                     <div class="icon">📦</div>
                     <div class="label" style="font-weight:600; margin-bottom:4px;">Типоразмеры</div>
-                    ${modelsHtml}
+                    ${sizesHtml}
                 </div>
             `;
         }
 
-        // ===== Детали за сегодня =====
         function showTodayDetails() {
             const now = new Date();
             const todayStart = new Date(now);
@@ -964,13 +897,10 @@
             openModal('detailsModal');
         }
 
-        // ===== Сводка по монтажникам =====
         function renderSummary() {
             const tbody = document.getElementById('summaryTableBody');
-            const filtered = dbList; // без фильтра
-
             const stats = {};
-            filtered.forEach(item => {
+            dbList.forEach(item => {
                 const installer = item.installer || 'Неизвестно';
                 if (!stats[installer]) stats[installer] = { count: 0, records: [] };
                 stats[installer].count++;
@@ -986,12 +916,12 @@
                     const count = stats[inst].count;
                     html += `
                         <tr>
-                            <td class="installer-name">${inst}</td>
-                            <td style="text-align:center;"><span class="count-badge">${count}</span></td>
-                            <td style="text-align:right;">
+                            <td><span class="installer-name">${inst}</span></td>
+                            <td style="text-align: center;"><span class="count-badge">${count}</span></td>
+                            <td style="text-align: right;">
                                 <button class="action-btn" onclick="showInstallerDetails('${inst}')">
-                                    <svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
-                                    Детализация
+                                    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
+                                    Посмотреть детали
                                 </button>
                             </td>
                         </tr>
@@ -1001,7 +931,6 @@
             tbody.innerHTML = html;
         }
 
-        // ===== Детализация по монтажнику =====
         function showInstallerDetails(installer) {
             const records = dbList.filter(item => item.installer === installer);
 
@@ -1055,16 +984,13 @@
             openModal('detailsModal');
         }
 
-        // ===== Таблица мониторинга (без кнопок) =====
         function renderFullTable() {
             const tbody = document.getElementById('fullTableBody');
-            const filtered = dbList; // без фильтра
-
             let html = '';
-            if (filtered.length === 0) {
+            if (dbList.length === 0) {
                 html = `<tr><td colspan="14" style="text-align:center; padding:24px; color:var(--text-muted);">Нет записей</td></tr>`;
             } else {
-                filtered.forEach(item => {
+                dbList.forEach(item => {
                     html += `<tr>
                         <td>${item.installer || '-'}</td>
                         <td>${item.objectName || '-'}</td>
@@ -1086,14 +1012,12 @@
             tbody.innerHTML = html;
         }
 
-        // ===== Экспорт в Excel с текстовым форматом =====
         function exportToExcel() {
             if (dbList.length === 0) {
                 alert('Нет данных для выгрузки.');
                 return;
             }
 
-            // Заголовки
             const headers = [
                 'Монтажник', 'Объект', 'Адрес', 'Расположение',
                 'Мощн. (м³/ч)', 'Модель', '№', 'Пломба',
@@ -1102,17 +1026,15 @@
             ];
 
             let html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
-            html += '<head><meta charset="utf-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Установки</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head>';
+            html += '<head><meta charset="utf-8"></head>';
             html += '<body><table>';
 
-            // Заголовки
             html += '<tr>';
             headers.forEach(h => {
-                html += `<th style="background:#0a0e1a;color:#fff;font-weight:bold;border:1px solid #444;padding:6px 8px;">${h}</th>`;
+                html += `<th style="background:#f1f5f9;color:#1e293b;font-weight:bold;border:1px solid #cbd5e1;padding:6px 8px;">${h}</th>`;
             });
             html += '</tr>';
 
-            // Данные
             dbList.forEach(item => {
                 html += '<tr>';
                 const cells = [
@@ -1132,8 +1054,7 @@
                     item.date || ''
                 ];
                 cells.forEach(val => {
-                    // Формат текстовый, чтобы не обрезать нули и длинные номера
-                    html += `<td style="border:1px solid #444;padding:4px 6px;mso-number-format:'\\@';">${val}</td>`;
+                    html += `<td style="border:1px solid #cbd5e1;padding:4px 6px;mso-number-format:'\\@';">${val}</td>`;
                 });
                 html += '</tr>';
             });
@@ -1152,28 +1073,28 @@
             URL.revokeObjectURL(url);
         }
 
-        // ===== Общий рендеринг =====
         function renderAll() {
             renderStats();
             renderSummary();
             renderFullTable();
         }
 
-        // ===== Firebase =====
+        // Подключение информирования о сети
         firebase.database().ref('.info/connected').on('value', snap => {
             const dot = document.getElementById('connDot');
             const text = document.getElementById('connText');
             if (snap.val() === true) {
                 dot.classList.add('online');
                 text.innerText = 'В сети';
-                text.style.color = '#00d4ff';
+                text.style.color = '#0284c7';
             } else {
                 dot.classList.remove('online');
                 text.innerText = 'Офлайн';
-                text.style.color = '#6a7fa0';
+                text.style.color = '#64748b';
             }
         });
 
+        // Получение записей из Firebase
         dbRef.on('value', snap => {
             const data = snap.val();
             dbList = [];
@@ -1194,7 +1115,7 @@
         }, err => {
             console.error('Firebase error:', err);
             document.getElementById('statsGrid').innerHTML = `
-                <div class="stat-card" style="grid-column:1/-1; text-align:center; color:#f472b6;">
+                <div class="stat-card" style="grid-column:1/-1; text-align:center; color:#db2777;">
                     <div class="icon">⚠️</div>
                     <div>Ошибка загрузки данных</div>
                     <div style="font-size:0.8rem; color:var(--text-muted);">${err.message}</div>
