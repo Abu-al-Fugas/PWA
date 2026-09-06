@@ -38,7 +38,8 @@
     .scan-btn { background: #e2e8f0; color: #1e293b; border: 1px solid #cbd5e1; border-radius: 12px; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; cursor: pointer; flex-shrink: 0; transition: background 0.2s; }
     .scan-btn:active { background: #cbd5e1; }
 
-    button { background: #2b7a4b; color: white; border: none; border-radius: 14px; padding: 14px 20px; font-size: 1rem; font-weight: 600; width: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: background 0.2s; }
+    /* Равномерный размер кнопок (добавлен прозрачный border и уменьшен padding) */
+    button { background: #2b7a4b; color: white; border: 1px solid transparent; border-radius: 14px; padding: 13px 20px; font-size: 1rem; font-weight: 600; width: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: background 0.2s; }
     button:active { transform: scale(0.98); background: #1f5a3b; }
     button:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; transform: none; }
     
@@ -112,6 +113,15 @@
     .radio-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
     .radio-card { display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid #cbd5e1; padding: 10px 8px; border-radius: 8px; font-size: 0.9rem; color: #334155; cursor: pointer; }
     .radio-card input[type="radio"] { width: 18px; height: 18px; accent-color: #2b7a4b; flex-shrink: 0; margin: 0; }
+
+    /* Динамически создаваемые классы для чек-листа */
+    .dynamic-input-row { display: flex; gap: 8px; margin-bottom: 8px; }
+    .dynamic-input-row input { flex-grow: 1; padding: 8px 12px; border-radius: 10px; font-size: 0.9rem; }
+    .model-select-btn { flex-shrink: 0; width: 140px; padding: 8px; border-radius: 10px; font-size: 0.85rem; background-color: #f8fafc; color: #334155; border: 1px solid #cbd5e1; box-shadow: none; display: flex; justify-content: space-between; align-items: center; }
+    .model-select-btn span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .no-account-label { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.9rem; flex-shrink: 0; background: #f1f5f9; padding: 0 12px; border-radius: 10px; border: 1px solid #cbd5e1; cursor:pointer; }
+    .no-account-label input { width: 18px; height: 18px; margin: 0; accent-color: #2b7a4b; }
+    .scan-mini-btn { flex-shrink: 0; width: 42px; height: 42px; border-radius: 10px; margin: 0; padding: 0; }
   </style>
 </head>
 <body>
@@ -190,10 +200,10 @@
       
       <div class="form-group">
         <label class="field-label required">Лицевой счет</label>
-        <div style="display: flex; gap: 8px;">
+        <div class="dynamic-input-row">
           <input type="text" inputmode="numeric" pattern="[0-9]*" id="accountNumber" placeholder="Пример: 123456789">
-          <label style="display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.9rem; flex-shrink: 0; background: #f1f5f9; padding: 0 12px; border-radius: 10px; border: 1px solid #cbd5e1; cursor:pointer;">
-            <input type="checkbox" id="noAccountCb" style="width: 18px; height: 18px; margin: 0; accent-color: #2b7a4b;"> Нет
+          <label class="no-account-label">
+            <input type="checkbox" id="noAccountCb"> Нет
           </label>
         </div>
       </div>
@@ -245,7 +255,7 @@
         </div>
 
         <button id="shareTextBtn" class="share-btn hidden">✉️ Отправить сейчас</button>
-        <button id="postponeReportBtn" class="secondary" style="border: 1px solid #eab308; color: #a16207; background: #fefce8;">🕒 Отложить отчет</button>
+        <button id="postponeReportBtn" class="secondary" style="border: 1px solid #eab308; color: #a16207; background: #fefce8;">Отложить отчет</button>
         <button id="goBackBtn" class="action-btn-outline">Назад</button>
         <button id="resetAllBtn" class="action-btn-danger">Завершить</button>
       </div>
@@ -281,7 +291,7 @@
     </div>
   </div>
 
-  <footer>iPhone | Версия 1.0 (СТМ-население)</footer>
+  <footer>iPhone | Версия 2.1.0 (СТМ-население)</footer>
 </div>
 
 <div id="photoModal" class="modal">
@@ -334,6 +344,14 @@
 <input type="file" id="globalFileInput" accept="image/*" multiple class="hidden">
 
 <script>
+  // Безопасная работа с localStorage (защита от падений в приватном режиме)
+  function safeGetLocal(key) {
+      try { return localStorage.getItem(key); } catch(e) { return null; }
+  }
+  function safeSetLocal(key, value) {
+      try { localStorage.setItem(key, value); } catch(e) { console.warn("localStorage недоступен"); }
+  }
+
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js?v=1.0').then(() => console.log('PWA Offline Ready'));
   }
@@ -390,7 +408,6 @@
 
   // ---- IndexedDB УНИВЕРСАЛЬНАЯ БАЗА ----
   let db;
-  // Версия 5 форсирует обновление схемы базы данных и гарантирует наличие таблицы archives
   const dbRequest = indexedDB.open("EtalonPWA_DB", 5);
   dbRequest.onupgradeneeded = (e) => {
     const database = e.target.result;
@@ -545,7 +562,8 @@
   }
 
   window.addEventListener('DOMContentLoaded', () => {
-    const savedName = localStorage.getItem('installerName'); if (savedName) document.getElementById('installerName').value = savedName;
+    const savedName = safeGetLocal('installerName'); 
+    if (savedName) document.getElementById('installerName').value = savedName;
     updateMainValidation();
   });
   window.addEventListener('resize', () => {
@@ -764,7 +782,7 @@
 
       const item = document.createElement('div'); item.className = 'photo-item';
       
-      // ИСПРАВЛЕНИЕ: Блокируем клики ТОЛЬКО для элементов, которые НЕ содержат галочку (idx !== 2)
+      // Блокируем клики ТОЛЬКО для элементов, которые НЕ содержат галочку (idx !== 2)
       if (state.noOldMeter && isOldMeterCfg) {
         if (idx !== 2) {
           item.style.opacity = '0.4';
@@ -806,7 +824,8 @@
       const disabledAttr = (state.noOldMeter && isOldMeterCfg) ? 'disabled' : '';
 
       if (cfg.hasOldModelInput) {
-        const inputDiv = document.createElement('div'); inputDiv.style.display = 'flex'; inputDiv.style.gap = '8px'; inputDiv.style.marginBottom = '8px';
+        const inputDiv = document.createElement('div'); 
+        inputDiv.className = 'dynamic-input-row';
         
         let currentModel = state.oldMeterModel;
         const isKnownModel = allOldMeterModels.includes(currentModel);
@@ -814,10 +833,9 @@
         let inputClass = (state.noOldMeter) ? 'neutral-border' : (currentModel ? 'valid' : '');
         let btnText = isKnownModel ? currentModel : 'Выбрать...';
 
-        // ИСПРАВЛЕНИЕ: Заменили тег <select> на кнопку, вызывающую полноэкранный поиск, при этом сохранив точный внешний вид и поле слева
-        inputDiv.innerHTML = `<input type="text" placeholder="Модель" value="${currentModel}" class="${inputClass}" style="flex-grow: 1; padding: 8px 12px; border-radius: 10px; font-size: 0.9rem;" ${disabledAttr}>
-          <button type="button" class="model-select-btn ${inputClass}" style="flex-shrink: 0; width: 140px; padding: 8px; border-radius: 10px; font-size: 0.85rem; background-color: #f8fafc; color: #334155; border: 1px solid #cbd5e1; box-shadow: none; display: flex; justify-content: space-between; align-items: center;" ${disabledAttr}>
-            <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${btnText}</span>
+        inputDiv.innerHTML = `<input type="text" placeholder="Модель" value="${currentModel}" class="${inputClass}" ${disabledAttr}>
+          <button type="button" class="model-select-btn ${inputClass}" ${disabledAttr}>
+            <span>${btnText}</span>
             <span>▾</span>
           </button>`;
         
@@ -852,7 +870,8 @@
         let inputClassR = state.noOldMeter ? 'neutral-border' : (state.oldMeterReadings ? 'valid' : '');
 
         const inputDiv = document.createElement('div');
-        inputDiv.innerHTML = `<input type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Заводской №" value="${state.oldMeterSerial}" class="${inputClassS}" style="width: 100%; padding: 8px 12px; margin-bottom: 8px; border-radius: 10px; font-size: 0.9rem;" ${disabledAttr}>
+        inputDiv.innerHTML = `
+          <input type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Заводской №" value="${state.oldMeterSerial}" class="${inputClassS}" style="width: 100%; padding: 8px 12px; margin-bottom: 8px; border-radius: 10px; font-size: 0.9rem;" ${disabledAttr}>
           <input type="text" inputmode="decimal" placeholder="Показания" value="${state.oldMeterReadings}" class="${inputClassR}" style="width: 100%; padding: 8px 12px; margin-bottom: 8px; border-radius: 10px; font-size: 0.9rem;" ${disabledAttr}>`;
         
         const inputs = inputDiv.querySelectorAll('input');
@@ -869,10 +888,10 @@
         let inputClass = state.noOldMeter ? 'neutral-border' : (state.controllerSeal ? 'valid' : '');
 
         const inputDiv = document.createElement('div'); 
-        inputDiv.style.display = 'flex'; inputDiv.style.gap = '8px'; inputDiv.style.marginBottom = '8px';
-        inputDiv.innerHTML = `<input type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Введите номер пломбы" value="${state.controllerSeal}" class="${inputClass}" style="flex-grow: 1; padding: 8px 12px; border-radius: 10px; font-size: 0.9rem;" ${disabledAttr}>
-          <label style="display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.9rem; flex-shrink: 0; background: #f1f5f9; padding: 0 12px; border-radius: 10px; border: 1px solid #cbd5e1; cursor:pointer;">
-            <input type="checkbox" style="width: 18px; height: 18px; margin: 0; accent-color: #2b7a4b;" ${disabledAttr}> Нет
+        inputDiv.className = 'dynamic-input-row';
+        inputDiv.innerHTML = `<input type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Введите номер пломбы" value="${state.controllerSeal}" class="${inputClass}" ${disabledAttr}>
+          <label class="no-account-label">
+            <input type="checkbox" ${disabledAttr}> Нет
           </label>`;
         
         const inputField = inputDiv.querySelector('input[type="text"]'); const checkbox = inputDiv.querySelector('input[type="checkbox"]');
@@ -891,9 +910,10 @@
       }
 
       if (cfg.hasSerialInput && !isOldMeterCfg) {
-        const inputDiv = document.createElement('div'); inputDiv.style.display = 'flex'; inputDiv.style.gap = '8px'; inputDiv.style.marginBottom = '8px';
-        inputDiv.innerHTML = `<input type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Заводской №" value="${state.serialNumber || ''}" class="${state.serialNumber ? 'valid' : ''}" style="flex-grow: 1; padding: 8px 12px; border-radius: 10px; font-size: 0.9rem;">
-          <button class="scan-btn" type="button" aria-label="Сканировать" style="flex-shrink: 0; width: 42px; height: 42px; border-radius: 10px; margin: 0; padding: 0;">📷</button>`;
+        const inputDiv = document.createElement('div'); 
+        inputDiv.className = 'dynamic-input-row';
+        inputDiv.innerHTML = `<input type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Заводской №" value="${state.serialNumber || ''}" class="${state.serialNumber ? 'valid' : ''}">
+          <button class="scan-btn scan-mini-btn" type="button" aria-label="Сканировать">📷</button>`;
         const inputField = inputDiv.querySelector('input');
         inputField.addEventListener('input', (e) => { state.serialNumber = e.target.value.trim(); e.target.classList.toggle('valid', state.serialNumber !== ''); saveDraft(); validateForm(); });
         inputDiv.querySelector('.scan-btn').addEventListener('click', () => { 
@@ -919,9 +939,10 @@
       }
 
       if (cfg.hasSimInput) {
-        const inputDiv = document.createElement('div'); inputDiv.style.display = 'flex'; inputDiv.style.gap = '8px'; inputDiv.style.marginBottom = '8px';
-        inputDiv.innerHTML = `<input type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Введите № SIM-карты" value="${state.simCardNumber || ''}" class="${state.simCardNumber ? 'valid' : ''}" style="flex-grow: 1; padding: 8px 12px; border-radius: 10px; font-size: 0.9rem;">
-          <button class="scan-btn" type="button" aria-label="Сканировать" style="flex-shrink: 0; width: 42px; height: 42px; border-radius: 10px; margin: 0; padding: 0;">📷</button>`;
+        const inputDiv = document.createElement('div'); 
+        inputDiv.className = 'dynamic-input-row';
+        inputDiv.innerHTML = `<input type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Введите № SIM-карты" value="${state.simCardNumber || ''}" class="${state.simCardNumber ? 'valid' : ''}">
+          <button class="scan-btn scan-mini-btn" type="button" aria-label="Сканировать">📷</button>`;
         const inputField = inputDiv.querySelector('input');
         inputField.addEventListener('input', (e) => { state.simCardNumber = e.target.value.trim(); e.target.classList.toggle('valid', state.simCardNumber !== ''); saveDraft(); validateForm(); });
         inputDiv.querySelector('.scan-btn').addEventListener('click', () => { startWebScanner((resultText) => { inputField.value = resultText; state.simCardNumber = resultText; inputField.classList.add('valid'); saveDraft(); validateForm(); }); });
@@ -1029,6 +1050,9 @@
     const gps = (state.coordinates && !state.coordinates.error) ? `${state.coordinates.lat.toFixed(6)}, ${state.coordinates.lng.toFixed(6)}` : 'Не определены';
     const datetime = formatDateTime(state.creationDate); 
     
+    // Получаем текст версии из подвала
+    const appVersionText = document.querySelector('footer') ? document.querySelector('footer').innerText : 'Версия 2.1.0';
+    
     let oldMeterText = "";
     for(let m=1; m<=state.oldMeterCount; m++) {
         let oM = m===1 ? state.oldMeterModel : (m===2 ? state.oldMeterModel2 : state.oldMeterModel3);
@@ -1046,7 +1070,7 @@
         if (m < state.oldMeterCount) oldMeterText += "--------------------\n";
     }
 
-    let text = `• Город: ${state.cityName || 'не указан'}\n• Адрес: ${state.address}\n• Расположение: ${state.uirgLocation || 'не указано'}\n• GPS: ${gps}\n• Потребитель: ${state.consumerName}\n• ЛС: ${state.accountNumber}\n--------------------\n${oldMeterText}--------------------\n• Модель нового: ${state.meterModel}\n• № нового: ${state.serialNumber}\n• Направление: ${state.newGasDirection || 'нет'}\n• SIM: ${state.simCardNumber || 'нет'}\n--------------------\n• Комментарий: ${state.comment || 'нет'}\n--------------------\n• Монтажник: ${state.installerName}\n• ${datetime}`;
+    let text = `• Объект: Частный дом\n• Город: ${state.cityName || 'не указан'}\n• Адрес: ${state.address}\n• Расположение: ${state.uirgLocation || 'не указано'}\n• GPS: ${gps}\n• Потребитель: ${state.consumerName}\n• ЛС: ${state.accountNumber}\n--------------------\n${oldMeterText}--------------------\n• Модель нового: ${state.meterModel}\n• № нового: ${state.serialNumber}\n• Направление: ${state.newGasDirection || 'нет'}\n• SIM: ${state.simCardNumber || 'нет'}\n--------------------\n• Комментарий: ${state.comment || 'нет'}\n--------------------\n• Монтажник: ${state.installerName}\n• Дата: ${datetime}\n--------------------\n• ${appVersionText}`;
     return text;
   }
 
@@ -1079,22 +1103,54 @@
       filesToPack.unshift({ name: 'report_info.txt', blob: new TextEncoder().encode(emailBodyText) });
       if (state.signatureDataUrl) { filesToPack.push({ name: 'signature.png', blob: dataURItoUint8Array(state.signatureDataUrl) }); }
 
+      // Формирование ZIP-архива разбито для лучшей читаемости
       let fileData = [], centralDir = [], offset = 0; const encoder = new TextEncoder();
+      
       for (let i = 0; i < filesToPack.length; i++) {
-        const file = filesToPack[i]; generateBtn.innerText = `⏳ Упаковка: ${i + 1}/${filesToPack.length}...`; await new Promise(r => setTimeout(r, 10));
-        const nameBytes = encoder.encode(file.name); const bodyBytes = file.blob;
-        let crc = 0xFFFFFFFF; for (let b = 0; b < bodyBytes.length; b++) { crc ^= bodyBytes[b]; for (let j = 0; j < 8; j++) crc = (crc >>> 1) ^ (crc & 1 ? 0xEDB88320 : 0); } crc ^= 0xFFFFFFFF;
-        const lfh = new Uint8Array(30 + nameBytes.length); lfh.set([0x50, 0x4B, 0x03, 0x04, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, crc & 0xFF, (crc >>> 8) & 0xFF, (crc >>> 16) & 0xFF, (crc >>> 24) & 0xFF, bodyBytes.length & 0xFF, (bodyBytes.length >>> 8) & 0xFF, (bodyBytes.length >>> 16) & 0xFF, (bodyBytes.length >>> 24) & 0xFF, bodyBytes.length & 0xFF, (bodyBytes.length >>> 8) & 0xFF, (bodyBytes.length >>> 16) & 0xFF, (bodyBytes.length >>> 24) & 0xFF, nameBytes.length & 0xFF, (nameBytes.length >>> 8) & 0xFF, 0, 0]); lfh.set(nameBytes, 30); fileData.push(lfh, bodyBytes);
-        const cdh = new Uint8Array(46 + nameBytes.length); cdh.set([0x50, 0x4B, 0x01, 0x02, 20, 0, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, crc & 0xFF, (crc >>> 8) & 0xFF, (crc >>> 16) & 0xFF, (crc >>> 24) & 0xFF, bodyBytes.length & 0xFF, (bodyBytes.length >>> 8) & 0xFF, (bodyBytes.length >>> 16) & 0xFF, (bodyBytes.length >>> 24) & 0xFF, bodyBytes.length & 0xFF, (bodyBytes.length >>> 8) & 0xFF, (bodyBytes.length >>> 16) & 0xFF, (bodyBytes.length >>> 24) & 0xFF, nameBytes.length & 0xFF, (nameBytes.length >>> 8) & 0xFF, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, offset & 0xFF, (offset >>> 8) & 0xFF, (offset >>> 16) & 0xFF, (offset >>> 24) & 0xFF]); cdh.set(nameBytes, 46); centralDir.push(cdh); offset += lfh.length + bodyBytes.length;
+        const file = filesToPack[i]; 
+        generateBtn.innerText = `⏳ Упаковка: ${i + 1}/${filesToPack.length}...`; 
+        await new Promise(r => setTimeout(r, 10));
+        
+        const nameBytes = encoder.encode(file.name); 
+        const bodyBytes = file.blob;
+        
+        let crc = 0xFFFFFFFF; 
+        for (let b = 0; b < bodyBytes.length; b++) { 
+            crc ^= bodyBytes[b]; 
+            for (let j = 0; j < 8; j++) crc = (crc >>> 1) ^ (crc & 1 ? 0xEDB88320 : 0); 
+        } 
+        crc ^= 0xFFFFFFFF;
+        
+        const lfh = new Uint8Array(30 + nameBytes.length); 
+        lfh.set([0x50, 0x4B, 0x03, 0x04, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, crc & 0xFF, (crc >>> 8) & 0xFF, (crc >>> 16) & 0xFF, (crc >>> 24) & 0xFF, bodyBytes.length & 0xFF, (bodyBytes.length >>> 8) & 0xFF, (bodyBytes.length >>> 16) & 0xFF, (bodyBytes.length >>> 24) & 0xFF, bodyBytes.length & 0xFF, (bodyBytes.length >>> 8) & 0xFF, (bodyBytes.length >>> 16) & 0xFF, (bodyBytes.length >>> 24) & 0xFF, nameBytes.length & 0xFF, (nameBytes.length >>> 8) & 0xFF, 0, 0]); 
+        lfh.set(nameBytes, 30); 
+        fileData.push(lfh, bodyBytes);
+        
+        const cdh = new Uint8Array(46 + nameBytes.length); 
+        cdh.set([0x50, 0x4B, 0x01, 0x02, 20, 0, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, crc & 0xFF, (crc >>> 8) & 0xFF, (crc >>> 16) & 0xFF, (crc >>> 24) & 0xFF, bodyBytes.length & 0xFF, (bodyBytes.length >>> 8) & 0xFF, (bodyBytes.length >>> 16) & 0xFF, (bodyBytes.length >>> 24) & 0xFF, bodyBytes.length & 0xFF, (bodyBytes.length >>> 8) & 0xFF, (bodyBytes.length >>> 16) & 0xFF, (bodyBytes.length >>> 24) & 0xFF, nameBytes.length & 0xFF, (nameBytes.length >>> 8) & 0xFF, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, offset & 0xFF, (offset >>> 8) & 0xFF, (offset >>> 16) & 0xFF, (offset >>> 24) & 0xFF]); 
+        cdh.set(nameBytes, 46); 
+        centralDir.push(cdh); 
+        offset += lfh.length + bodyBytes.length;
       }
-      let cdLen = centralDir.reduce((a, b) => a + b.length, 0); const eocd = new Uint8Array(22); eocd.set([0x50, 0x4B, 0x05, 0x06, 0, 0, 0, 0, filesToPack.length & 0xFF, (filesToPack.length >>> 8) & 0xFF, filesToPack.length & 0xFF, (filesToPack.length >>> 8) & 0xFF, cdLen & 0xFF, (cdLen >>> 8) & 0xFF, (cdLen >>> 16) & 0xFF, (cdLen >>> 24) & 0xFF, offset & 0xFF, (offset >>> 8) & 0xFF, (offset >>> 16) & 0xFF, (offset >>> 24) & 0xFF, 0, 0]);
-      const finalZipUint8 = new Uint8Array(offset + cdLen + 22); let currentPos = 0; fileData.forEach(part => { finalZipUint8.set(part, currentPos); currentPos += part.length; }); centralDir.forEach(part => { finalZipUint8.set(part, currentPos); currentPos += part.length; }); finalZipUint8.set(eocd, currentPos);
+      
+      let cdLen = centralDir.reduce((a, b) => a + b.length, 0); 
+      const eocd = new Uint8Array(22); 
+      eocd.set([0x50, 0x4B, 0x05, 0x06, 0, 0, 0, 0, filesToPack.length & 0xFF, (filesToPack.length >>> 8) & 0xFF, filesToPack.length & 0xFF, (filesToPack.length >>> 8) & 0xFF, cdLen & 0xFF, (cdLen >>> 8) & 0xFF, (cdLen >>> 16) & 0xFF, (cdLen >>> 24) & 0xFF, offset & 0xFF, (offset >>> 8) & 0xFF, (offset >>> 16) & 0xFF, (offset >>> 24) & 0xFF, 0, 0]);
+      
+      const finalZipUint8 = new Uint8Array(offset + cdLen + 22); 
+      let currentPos = 0; 
+      
+      fileData.forEach(part => { finalZipUint8.set(part, currentPos); currentPos += part.length; }); 
+      centralDir.forEach(part => { finalZipUint8.set(part, currentPos); currentPos += part.length; }); 
+      finalZipUint8.set(eocd, currentPos);
       
       const d = new Date(state.creationDate); const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
       let sanitizedSerial = state.serialNumber.replace(/[^a-zа-яё0-9]/gi, '_').substring(0, 24);
       currentZipName = `${sanitizedSerial}_${dateStr}.zip`;
 
+      // Добавлен ключ objectName
       const fbReportData = { 
+        objectName: "Частный дом",
         city: state.cityName || "",
         address: state.address || "", 
         uirgLocation: state.uirgLocation || "", 
@@ -1188,7 +1244,7 @@
     if (!state.cityName || !state.address || !state.uirgLocation || !state.installerName || !state.meterModel || !state.consumerName || !state.accountNumber) { alert("Заполните ВСЕ обязательные поля, выделенные красной рамкой!"); updateMainValidation(); return; }
     if (!state.signatureDataUrl) { alert("Потребитель должен поставить подпись!"); return; }
     
-    localStorage.setItem('installerName', state.installerName);
+    safeSetLocal('installerName', state.installerName);
     formScreen.classList.add('hidden'); checklistScreen.classList.remove('hidden');
     if (!navigator.onLine) syncStatus.classList.remove('hidden');
     state.creationDate = new Date().toISOString(); startActiveGeoSearch(); saveDraft(); renderChecklist();
@@ -1196,11 +1252,11 @@
 
   // Отложенные отчеты: перехватываем функцию сброса
   function performReset() {
-    state.photos.forEach(arr => { arr.forEach(p => URL.revokeObjectURL(p.previewUrl)); });
-    state.photos2.forEach(arr => { arr.forEach(p => URL.revokeObjectURL(p.previewUrl)); });
-    state.photos3.forEach(arr => { arr.forEach(p => URL.revokeObjectURL(p.previewUrl)); });
+    state.photos.forEach(arr => { arr.forEach(p => URL.revokeObjectURL(p.dataUrl)); });
+    state.photos2.forEach(arr => { arr.forEach(p => URL.revokeObjectURL(p.dataUrl)); });
+    state.photos3.forEach(arr => { arr.forEach(p => URL.revokeObjectURL(p.dataUrl)); });
     if (watchId !== null) { navigator.geolocation.clearWatch(watchId); watchId = null; } if (gpsTimeoutId !== null) { clearTimeout(gpsTimeoutId); gpsTimeoutId = null; }
-    state = { cityName: '', address: '', uirgLocation: '', installerName: localStorage.getItem('installerName') || '', serialNumber: '', meterModel: '', consumerName: '', accountNumber: '', signatureDataUrl: '', controllerSeal: '', oldMeterCount: 1, oldMeterModel: '', oldMeterSerial: '', oldMeterReadings: '', oldMeterModel2: '', oldMeterSerial2: '', oldMeterReadings2: '', controllerSeal2: '', oldMeterModel3: '', oldMeterSerial3: '', oldMeterReadings3: '', controllerSeal3: '', newGasDirection: '', simCardNumber: '', noOldMeter: false, comment: '', coordinates: null, creationDate: null, gpsLocked: false, photos: Array.from({ length: mandatoryConfig.length }, () => []), photos2: Array.from({ length: mandatoryConfig.length }, () => []), photos3: Array.from({ length: mandatoryConfig.length }, () => []), currentActiveIndex: null, currentActiveMeter: 1 };
+    state = { cityName: '', address: '', uirgLocation: '', installerName: safeGetLocal('installerName') || '', serialNumber: '', meterModel: '', consumerName: '', accountNumber: '', signatureDataUrl: '', controllerSeal: '', oldMeterCount: 1, oldMeterModel: '', oldMeterSerial: '', oldMeterReadings: '', oldMeterModel2: '', oldMeterSerial2: '', oldMeterReadings2: '', controllerSeal2: '', oldMeterModel3: '', oldMeterSerial3: '', oldMeterReadings3: '', controllerSeal3: '', newGasDirection: '', simCardNumber: '', noOldMeter: false, comment: '', coordinates: null, creationDate: null, gpsLocked: false, photos: Array.from({ length: mandatoryConfig.length }, () => []), photos2: Array.from({ length: mandatoryConfig.length }, () => []), photos3: Array.from({ length: mandatoryConfig.length }, () => []), currentActiveIndex: null, currentActiveMeter: 1 };
     currentZipName = "";
     document.getElementById('cityName').value = ''; document.getElementById('address').value = ''; document.getElementById('meterModel').value = ''; document.getElementById('consumerName').value = ''; document.getElementById('accountNumber').value = ''; document.getElementById('noAccountCb').checked = false; document.getElementById('reportComment').value = '';
     document.querySelectorAll('input[name="uirg"]').forEach(r => r.checked = false);
@@ -1379,14 +1435,17 @@
         let textMsg = filesDataArray.length === 1 ? filesDataArray[0].text : "Архивы фотоотчетов во вложении.";
         await navigator.share({ files: filesToShare, title: subjectText, text: textMsg });
         if (isMultiSelectMode) { selectedArchives.clear(); isMultiSelectMode = false; renderArchiveList(); } return;
-      } catch (err) { console.log("Share skipped/failed"); }
+      } catch (err) {
+          // Игнорируем ошибку отмены отправки
+      }
+    } else {
+        // Запасной план: скачивание
+        filesDataArray.forEach(f => {
+          let fileBlob = f.base64 ? new Blob([base64ToUint8(f.base64)], { type: "application/zip" }) : (f.data ? new Blob([f.data], { type: "application/zip" }) : f.blob);
+          const link = document.createElement('a'); link.href = URL.createObjectURL(fileBlob); link.download = f.name; document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        });
+        if (isMultiSelectMode) { selectedArchives.clear(); isMultiSelectMode = false; renderArchiveList(); }
     }
-
-    filesDataArray.forEach(f => {
-      let fileBlob = f.base64 ? new Blob([base64ToUint8(f.base64)], { type: "application/zip" }) : (f.data ? new Blob([f.data], { type: "application/zip" }) : f.blob);
-      const link = document.createElement('a'); link.href = URL.createObjectURL(fileBlob); link.download = f.name; document.body.appendChild(link); link.click(); document.body.removeChild(link);
-    });
-    if (isMultiSelectMode) { selectedArchives.clear(); isMultiSelectMode = false; renderArchiveList(); }
   }
 
   function deleteFiles(namesArray) {
