@@ -1,1233 +1,1420 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>СМТ Мониторинг — Космос</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <title>СТМ-население — фотоотчёт</title>
+  <meta name="theme-color" content="#2b7a4b">
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="СТМ-население">
+  <link rel="apple-touch-icon" href="icon.png">
+  
+  <script src="https://unpkg.com/html5-qrcode"></script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f4f6f9; padding: max(12px, env(safe-area-inset-top)) 12px 12px 12px; color: #1e293b; user-select: none; }
+    .container { max-width: 600px; margin: 0 auto; padding-bottom: 250px; position: relative; }
+    .card { background: white; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); padding: 20px 16px; margin-bottom: 16px; position: relative; }
+    h1 { font-size: 1.6rem; font-weight: 700; color: #1e4620; margin-bottom: 16px; text-align: center; }
+    h2 { font-size: 1.15rem; font-weight: 600; margin-bottom: 14px; border-left: 4px solid #2b7a4b; padding-left: 10px; color: #0f2d19; }
     
-    <meta name="theme-color" content="#f0f2f5">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="СМТ Мониторинг">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    .form-group { margin-bottom: 16px; }
+    label.field-label { display: block; font-weight: 500; margin-bottom: 6px; font-size: 0.85rem; color: #334155; }
+    .required::after { content: " *"; color: #ef4444; }
     
-    <link rel="apple-touch-icon" href="icon.png">
+    .input-wrapper { display: flex; gap: 8px; align-items: center; }
     
-    <link rel="manifest" href="manifest.json">
+    /* ВАЛИДАЦИЯ - КРАСНАЯ И ЗЕЛЕНАЯ КРОМКА */
+    input[type="text"], input[type="number"], input[type="tel"], textarea, select { flex-grow: 1; width: 100%; padding: 12px 14px; font-size: 0.95rem; border: 1px solid #ef4444; border-radius: 12px; background: #fff; font-family: inherit; -webkit-appearance: none; transition: border-color 0.3s; }
+    input:focus, textarea:focus, select:focus { outline: none; box-shadow: 0 0 0 3px rgba(43,122,75,0.15); }
+    input.valid, select.valid, #signatureWrapper.valid, button.valid { border-color: #22c55e !important; }
+    input.neutral-border, select.neutral-border, button.neutral-border { border-color: #cbd5e1 !important; }
 
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23334155' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; padding-right: 40px; }
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    .scan-btn { background: #e2e8f0; color: #1e293b; border: 1px solid #cbd5e1; border-radius: 12px; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; cursor: pointer; flex-shrink: 0; transition: background 0.2s; }
+    .scan-btn:active { background: #cbd5e1; }
 
-    <style>
-        /* ===== Светлая и мягкая тема палитры ===== */
-        :root {
-            --bg-primary: #f0f2f5;
-            --bg-secondary: #ffffff;
-            --glass-bg: rgba(255, 255, 255, 0.85);
-            --glass-border: rgba(0, 0, 0, 0.08);
-            --text-primary: #1e293b;
-            --text-secondary: #475569;
-            --text-muted: #64748b;
-            --accent-cyan: #0284c7;
-            --accent-blue: #2563eb;
-            --accent-purple: #7c3aed;
-            --accent-orange: #d97706;
-            --accent-pink: #db2777;
-            --shadow-glow: 0 4px 20px rgba(0, 0, 0, 0.05);
-            --radius: 16px;
-        }
+    button { background: #2b7a4b; color: white; border: none; border-radius: 14px; padding: 14px 20px; font-size: 1rem; font-weight: 600; width: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: background 0.2s; }
+    button:active { transform: scale(0.98); background: #1f5a3b; }
+    button:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; transform: none; }
+    
+    /* Стили новых кнопок действий */
+    button.action-btn-outline { background: transparent; color: #334155; border: 1px solid #cbd5e1; box-shadow: none; font-weight: 600; }
+    button.action-btn-outline:active { background: #f8fafc; }
+    button.action-btn-danger { background: #fef2f2; color: #ef4444; border: 1px solid #fca5a5; box-shadow: none; font-weight: 600; }
+    button.action-btn-danger:active { background: #fee2e2; }
+    
+    button.secondary { background: #e2e8f0; color: #334155; }
+    button.share-btn { background: #2563eb; margin-top: 4px; }
+    button.share-btn:active { background: #1d4ed8; }
+    button.danger-btn { background: #ef4444; color: white; }
+    button.danger-btn:active { background: #dc2626; }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+    .instruction-box { background: #e0f2fe; border: 1px solid #bae6fd; border-radius: 14px; padding: 14px; margin-top: 12px; color: #0369a1; font-size: 0.95rem; line-height: 1.4; }
+    
+    .photo-grid { display: flex; flex-direction: column; gap: 12px; }
+    .photo-item { background: #f8fafc; border-radius: 14px; padding: 12px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 10px; transition: opacity 0.3s; }
+    .photo-header { display: flex; justify-content: space-between; align-items: flex-start; }
+    .photo-title { font-weight: 500; font-size: 0.9rem; color: #1e293b; line-height: 1.3; }
+    .photo-meta { font-size: 0.7rem; color: #64748b; margin-top: 3px; }
+    .media-row { display: flex; flex-direction: row; gap: 10px; overflow-x: auto; padding: 4px 2px; -webkit-overflow-scrolling: touch; }
+    .photo-container { position: relative; width: 60px; height: 60px; flex-shrink: 0; }
+    .thumbnail { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; border: 1px solid #cbd5e1; }
+    .delete-btn { position: absolute; top: -5px; right: -5px; width: 20px; height: 20px; background: #ef4444; color: white; border-radius: 50%; border: 1px solid white; font-size: 14px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2); padding: 0; }
+    
+    .add-photo-placeholder { width: 60px; height: 60px; border: 1px dashed #ef4444; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.65rem; color: #ef4444; font-weight: 500; background: #fff; cursor: pointer; flex-shrink: 0; transition: border-color 0.3s, color 0.3s; }
+    .add-photo-placeholder.has-photos { border: 1px dashed #22c55e !important; color: #22c55e !important; }
+    .add-photo-placeholder.optional { border: 1px dashed #cbd5e1 !important; color: #64748b !important; }
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            min-height: 100vh;
-            padding: 20px;
-            position: relative;
-            overflow-x: hidden;
-        }
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: center; overflow: hidden; }
+    .modal-close { position: absolute; top: max(20px, env(safe-area-inset-top)); right: 20px; width: 40px; height: 40px; background: rgba(255,255,255,0.2); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; z-index: 1010; }
+    .modal-wrapper { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; transition: transform 0.1s ease-out; }
+    .modal-img { max-width: 95%; max-height: 85%; object-fit: contain; pointer-events: none; }
+    
+    /* Стили для сканера штрихкодов в PWA */
+    #scannerModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
+    #scannerModalClose { position: absolute; top: max(20px, env(safe-area-inset-top)); right: 20px; width: 40px; height: 40px; background: rgba(255,255,255,0.2); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; z-index: 2010; cursor: pointer; }
+    #reader { width: 100%; max-width: 500px; background: #000; border-radius: 12px; overflow: hidden; }
+    .scanner-tip { color: white; margin-top: 20px; font-size: 0.95rem; text-align: center; padding: 0 20px; }
 
-        /* ===== Звёздный фон (светлые частицы) ===== */
-        #stars-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-            pointer-events: none;
-        }
+    .hidden { display: none !important; }
+    .geo-status-badge { display: inline-block; padding: 2px 6px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; margin-top: 4px; }
+    .geo-searching { background: #fef3c7; color: #d97706; }
+    .geo-success { background: #dcfce7; color: #15803d; }
+    .geo-error { background: #fee2e2; color: #b91c1c; }
+    
+    .archive-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; transition: padding-bottom 0.3s; }
+    .archive-item { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 12px; transition: background 0.2s; position: relative; }
+    .archive-item.selected { background: #dbeafe; border-color: #3b82f6; }
+    .archive-checkbox { width: 22px; height: 22px; border-radius: 6px; border: 2px solid #cbd5e1; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: white; cursor: pointer; }
+    .archive-item.selected .archive-checkbox { background: #3b82f6; border-color: #3b82f6; }
+    .archive-item.selected .archive-checkbox::after { content: "✓"; color: white; font-weight: bold; font-size: 14px; }
+    .archive-info { flex-grow: 1; overflow: hidden; }
+    .archive-name { font-weight: 600; font-size: 0.95rem; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    
+    .multi-action-bar-wrapper {
+      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px;
+      background: white; padding: 12px 16px max(16px, env(safe-area-inset-bottom)); box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+      z-index: 100; display: flex; flex-direction: column; gap: 10px; border-top-left-radius: 20px; border-top-right-radius: 20px;
+    }
+    .action-row { display: flex; gap: 10px; }
+    .action-row button { padding: 10px 4px; margin: 0; font-size: 0.95rem; border-radius: 10px; flex: 1; white-space: nowrap; height: 42px; }
 
-        .app-wrapper {
-            position: relative;
-            z-index: 1;
-            max-width: 1400px;
-            margin: 0 auto;
-        }
+    footer { text-align: center; font-size: 0.75rem; color: #94a3b8; margin-top: 20px; }
 
-        /* ===== Шапка ===== */
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px 28px;
-            background: var(--glass-bg);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid var(--glass-border);
-            border-radius: var(--radius);
-            margin-bottom: 28px;
-            box-shadow: var(--shadow-glow);
-        }
-        .logo {
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 700;
-            font-size: 1.5rem;
-            letter-spacing: 0.05em;
-            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        .status {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-        }
-        .dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: #94a3b8;
-            transition: background 0.4s, box-shadow 0.4s;
-        }
-        .dot.online {
-            background: var(--accent-cyan);
-            box-shadow: 0 0 16px var(--accent-cyan);
-            animation: pulse-dot 2s infinite;
-        }
-        @keyframes pulse-dot {
-            0% { box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.5); }
-            70% { box-shadow: 0 0 20px 6px rgba(2, 132, 199, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(2, 132, 199, 0); }
-        }
-
-        /* ===== Навигация (вкладки) ===== */
-        nav {
-            display: flex;
-            gap: 20px;
-        }
-        nav .tab-btn {
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            font-family: 'Inter', sans-serif;
-            font-size: 0.95rem;
-            font-weight: 500;
-            cursor: pointer;
-            padding: 6px 0;
-            border-bottom: 2px solid transparent;
-            transition: color 0.2s, border-color 0.2s;
-        }
-        nav .tab-btn:hover {
-            color: var(--text-primary);
-        }
-        nav .tab-btn.active {
-            color: var(--accent-cyan);
-            border-bottom-color: var(--accent-cyan);
-        }
-
-        /* ===== Табы-контейнеры ===== */
-        .tab-content {
-            display: none;
-            animation: fadeIn 0.2s ease;
-        }
-        .tab-content.active {
-            display: block;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(6px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* ===== Стили для вкладки "Сводка" ===== */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 18px;
-            margin-bottom: 30px;
-        }
-        .stat-card {
-            background: var(--bg-secondary);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid var(--glass-border);
-            border-radius: var(--radius);
-            padding: 20px 18px;
-            box-shadow: var(--shadow-glow);
-            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s;
-            cursor: default;
-            position: relative;
-            overflow: hidden;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle at 30% 40%, rgba(2,132,199,0.03), transparent 70%);
-            pointer-events: none;
-        }
-        .stat-card:hover {
-            transform: translateY(-5px);
-            border-color: rgba(2, 132, 199, 0.25);
-            box-shadow: 0 8px 40px rgba(2, 132, 199, 0.12);
-        }
-        .stat-card .icon {
-            font-size: 1.5rem;
-            line-height: 1;
-            margin-bottom: 8px;
-            opacity: 0.8;
-        }
-        .stat-card .number {
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 700;
-            font-size: 2rem;
-            color: var(--text-primary);
-            letter-spacing: 0.02em;
-            line-height: 1.2;
-        }
-        .stat-card .label {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            margin-top: 4px;
-        }
-        .stat-card .sub {
-            font-size: 0.7rem;
-            color: var(--text-muted);
-            margin-top: 2px;
-        }
-        .stat-card.accent-cyan .number { color: var(--accent-cyan); }
-        .stat-card.accent-blue .number { color: var(--accent-blue); }
-        .stat-card.accent-purple .number { color: var(--accent-purple); }
-        .stat-card.accent-orange .number { color: var(--accent-orange); }
-        .stat-card.accent-pink .number { color: var(--accent-pink); }
-        .stat-card.accent-green .number { color: #16a34a; }
-
-        .stat-card.clickable {
-            cursor: pointer;
-        }
-        .stat-card.clickable:hover {
-            border-color: var(--accent-cyan);
-            box-shadow: 0 8px 40px rgba(2, 132, 199, 0.18);
-        }
-
-        .model-list {
-            margin-top: 6px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 2px;
-            width: 100%;
-        }
-        .model-item {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-            max-width: 200px;
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            border-bottom: 1px solid rgba(0,0,0,0.04);
-            padding: 2px 0;
-        }
-        .model-item .model-name {
-            color: var(--text-primary);
-            font-weight: 400;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 130px;
-        }
-        .model-item .model-count {
-            font-weight: 600;
-            color: var(--accent-cyan);
-            flex-shrink: 0;
-            margin-left: 8px;
-        }
-
-        .table-container {
-            background: var(--bg-secondary);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid var(--glass-border);
-            border-radius: var(--radius);
-            overflow: hidden;
-            box-shadow: var(--shadow-glow);
-        }
-        .table-header {
-            padding: 16px 24px;
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 600;
-            font-size: 1rem;
-            letter-spacing: 0.03em;
-            color: var(--text-secondary);
-            border-bottom: 1px solid rgba(0,0,0,0.06);
-            text-transform: uppercase;
-            display: none;
-        }
-        .table-responsive {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9rem;
-        }
-        th {
-            text-align: left;
-            padding: 14px 20px;
-            color: var(--text-secondary);
-            font-weight: 600;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-            border-bottom: 1px solid rgba(0,0,0,0.06);
-            background: #f8fafc;
-        }
-        td {
-            padding: 14px 20px;
-            border-bottom: 1px solid rgba(0,0,0,0.04);
-            vertical-align: middle;
-            color: var(--text-primary);
-        }
-        tr:last-child td {
-            border-bottom: none;
-        }
-        tr:hover td {
-            background: #f1f5f9;
-        }
-        .installer-name {
-            font-weight: 600;
-            color: var(--text-primary);
-            letter-spacing: 0.01em;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 150px;
-            display: inline-block;
-        }
-        .count-badge {
-            font-weight: 600;
-            color: var(--text-primary);
-            font-family: 'Inter', sans-serif;
-            font-size: 0.95rem;
-            background: none;
-            padding: 0;
-            border: none;
-        }
-        .action-btn {
-            background: #f8fafc;
-            border: 1px solid rgba(0,0,0,0.08);
-            color: var(--text-secondary);
-            padding: 6px 10px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            font-weight: 500;
-            transition: all 0.25s;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0;
-            font-family: 'Inter', sans-serif;
-            white-space: nowrap;
-            min-width: 36px;
-        }
-        .action-btn:hover {
-            background: rgba(2, 132, 199, 0.08);
-            border-color: var(--accent-cyan);
-            color: var(--accent-cyan);
-            box-shadow: 0 0 20px rgba(2, 132, 199, 0.1);
-        }
-        .action-btn svg {
-            width: 18px;
-            height: 18px;
-            stroke: currentColor;
-            stroke-width: 2;
-            fill: none;
-            display: block;
-        }
-        .action-btn .btn-text {
-            display: none;
-        }
-
-        /* ===== Вкладка "Таблица" (мониторинг) ===== */
-        #fullTable {
-            padding: 0;
-            margin: 0;
-        }
-        #fullTable .table-container {
-            border-radius: var(--radius);
-            background: var(--bg-secondary);
-            border: 1px solid var(--glass-border);
-            box-shadow: var(--shadow-glow);
-            backdrop-filter: none;
-        }
-        #fullTable .table-toolbar {
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            padding: 12px 20px;
-            border-bottom: 1px solid rgba(0,0,0,0.06);
-            background: #f8fafc;
-        }
-        #fullTable .table-toolbar .export-btn {
-            background: rgba(2, 132, 199, 0.08);
-            border: 1px solid var(--accent-cyan);
-            color: var(--accent-cyan);
-            padding: 6px 18px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-family: 'Inter', sans-serif;
-            font-size: 0.8rem;
-            font-weight: 500;
-            transition: all 0.25s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-        #fullTable .table-toolbar .export-btn:hover {
-            background: rgba(2, 132, 199, 0.15);
-            box-shadow: 0 0 20px rgba(2, 132, 199, 0.15);
-        }
-        #fullTable .table-responsive {
-            background: var(--bg-secondary);
-            border-radius: 0 0 var(--radius) var(--radius);
-            overflow-x: auto;
-        }
-        #fullTable table {
-            font-family: Arial, sans-serif;
-            font-size: 0.75rem;
-            color: var(--text-primary);
-            background: var(--bg-secondary);
-            border-collapse: collapse;
-            width: 100%;
-            table-layout: auto;
-        }
-        #fullTable table th,
-        #fullTable table td {
-            padding: 6px 8px;
-            border: none;
-            border-bottom: 1px solid rgba(0,0,0,0.06);
-            white-space: nowrap;
-            text-align: left;
-            vertical-align: middle;
-        }
-        #fullTable table th {
-            background: #f1f5f9;
-            color: #1e293b;
-            font-weight: 600;
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            border-bottom: 2px solid #cbd5e1;
-            padding: 8px 8px;
-        }
-        #fullTable table td {
-            color: #334155;
-            font-weight: 400;
-        }
-        #fullTable table tr:hover td {
-            background: #f1f5f9;
-        }
-
-        /* ===== Модальное окно ===== */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(15, 23, 42, 0.4);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            z-index: 2000;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        .modal-overlay.active {
-            display: flex;
-        }
-        .modal {
-            background: var(--bg-secondary);
-            border: 1px solid rgba(0,0,0,0.08);
-            border-radius: var(--radius);
-            max-width: 720px;
-            width: 100%;
-            max-height: 85vh;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.1), 0 0 60px rgba(2, 132, 199, 0.05);
-            animation: modalFade 0.25s ease;
-        }
-        @keyframes modalFade {
-            from { opacity: 0; transform: scale(0.96) translateY(20px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
-        }
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 18px 24px;
-            border-bottom: 1px solid rgba(0,0,0,0.06);
-        }
-        .modal-header h3 {
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 600;
-            font-size: 1.1rem;
-            color: var(--text-primary);
-            letter-spacing: 0.02em;
-        }
-        .modal-close {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            font-size: 1.6rem;
-            cursor: pointer;
-            transition: color 0.2s;
-            line-height: 1;
-            padding: 0 4px;
-        }
-        .modal-close:hover {
-            color: var(--text-primary);
-        }
-        .modal-body {
-            padding: 20px 24px;
-            overflow-y: auto;
-            flex: 1;
-        }
-        .modal-body .empty-state {
-            text-align: center;
-            color: var(--text-muted);
-            padding: 30px 0;
-        }
-        .day-group {
-            margin-bottom: 20px;
-        }
-        .day-group .day-title {
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 500;
-            font-size: 0.75rem;
-            letter-spacing: 0.04em;
-            color: var(--accent-cyan);
-            background: rgba(2, 132, 199, 0.06);
-            padding: 4px 14px;
-            border-radius: 20px;
-            display: inline-block;
-            margin-bottom: 10px;
-            border: 1px solid rgba(2, 132, 199, 0.08);
-        }
-        .record-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 12px;
-            border-radius: 8px;
-            background: #f8fafc;
-            margin-bottom: 4px;
-            border-left: 2px solid rgba(2, 132, 199, 0.3);
-        }
-        .record-item .record-main {
-            display: flex;
-            flex-direction: column;
-        }
-        .record-item .record-main .model {
-            font-weight: 500;
-            color: var(--text-primary);
-        }
-        .record-item .record-main .serial {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-        }
-        .record-item .record-meta {
-            text-align: right;
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-        }
-        .record-item .record-meta .time {
-            font-weight: 700;
-            font-size: 0.95rem;
-            color: var(--text-primary);
-            letter-spacing: 0.02em;
-        }
-        .record-item .record-meta .object-name {
-            font-size: 0.7rem;
-            color: var(--text-muted);
-        }
-        .modal-footer {
-            padding: 12px 24px 18px;
-            border-top: 1px solid rgba(0,0,0,0.06);
-            display: flex;
-            justify-content: flex-end;
-        }
-        .modal-footer .btn-close {
-            background: #f1f5f9;
-            border: 1px solid rgba(0,0,0,0.08);
-            padding: 8px 24px;
-            border-radius: 8px;
-            font-weight: 500;
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: background 0.2s, color 0.2s;
-            font-family: 'Inter', sans-serif;
-        }
-        .modal-footer .btn-close:hover {
-            background: #e2e8f0;
-            color: var(--text-primary);
-        }
-
-        /* ===== Адаптив для телефонов ===== */
-        @media (max-width: 768px) {
-            body { padding: 12px; }
-            .header { flex-direction: column; align-items: stretch; gap: 10px; padding: 16px; }
-            .logo { text-align: center; font-size: 1.3rem; }
-            .status { justify-content: center; }
-            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
-            .stat-card .number { font-size: 1.6rem; }
-            .modal { max-width: 100%; margin: 10px; }
-            nav { justify-content: center; gap: 12px; }
-            nav .tab-btn { font-size: 0.85rem; }
-            #fullTable table { font-size: 0.6rem; }
-            #fullTable table th,
-            #fullTable table td { padding: 4px 6px; }
-            .model-item { font-size: 0.75rem; max-width: 150px; }
-            .model-item .model-name { max-width: 90px; }
-            .stat-card .label { font-size: 0.7rem; }
-            .stat-card .sub { font-size: 0.6rem; }
-            table { font-size: 0.7rem; }
-            th, td { padding: 8px 10px; }
-            .installer-name { max-width: 100px; }
-            .action-btn { padding: 4px 8px; }
-            .action-btn svg { width: 16px; height: 16px; }
-        }
-        @media (max-width: 480px) {
-            .stats-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
-            .stat-card { padding: 14px 10px; }
-            .stat-card .number { font-size: 1.4rem; }
-            .model-item { font-size: 0.7rem; max-width: 120px; }
-            .model-item .model-name { max-width: 70px; }
-            table { font-size: 0.65rem; }
-            th, td { padding: 6px 8px; }
-            .installer-name { max-width: 80px; }
-        }
-
-        .stat-card {
-            opacity: 0;
-            transform: translateY(20px);
-            animation: cardAppear 0.5s ease forwards;
-        }
-        .stat-card:nth-child(1) { animation-delay: 0.05s; }
-        .stat-card:nth-child(2) { animation-delay: 0.1s; }
-        .stat-card:nth-child(3) { animation-delay: 0.15s; }
-        .stat-card:nth-child(4) { animation-delay: 0.2s; }
-
-        @keyframes cardAppear {
-            to { opacity: 1; transform: translateY(0); }
-        }
-    </style>
+    /* Стили для радио-групп с красной/зеленой валидацией */
+    .radio-wrapper { border: 1px solid #ef4444; border-radius: 12px; padding: 4px; transition: border-color 0.3s; }
+    .radio-wrapper.valid { border-color: #22c55e !important; }
+    .radio-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .radio-card { display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid #cbd5e1; padding: 10px 8px; border-radius: 8px; font-size: 0.9rem; color: #334155; cursor: pointer; }
+    .radio-card input[type="radio"] { width: 18px; height: 18px; accent-color: #2b7a4b; flex-shrink: 0; margin: 0; }
+  </style>
 </head>
 <body>
 
-    <canvas id="stars-canvas"></canvas>
-
-    <div class="app-wrapper">
-        <header class="header">
-            <div class="logo">✦ СМТ Мониторинг</div>
-            <div class="status">
-                <span class="dot" id="connDot"></span>
-                <span id="connText">Подключение…</span>
-            </div>
-            <nav>
-                <button class="tab-btn active" data-target="summary">Сводка</button>
-                <button class="tab-btn" data-target="fullTable">Таблица</button>
-            </nav>
-        </header>
-
-        <div id="summary" class="tab-content active">
-            <div class="stats-grid" id="statsGrid"></div>
-
-            <div class="table-container">
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Имя</th>
-                                <th style="text-align:center;">Устан.</th>
-                                <th style="text-align:right;">Детально</th>
-                            </tr>
-                        </thead>
-                        <tbody id="summaryTableBody"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <div id="fullTable" class="tab-content">
-            <div class="table-container">
-                <div class="table-toolbar">
-                    <button class="export-btn" onclick="exportToExcel()">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M8 8h8v8H8z"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
-                        Выгрузить в XLS
-                    </button>
-                </div>
-                <div class="table-responsive">
-                    <table id="dataTable">
-                        <thead>
-                            <tr>
-                                <th>Монтажник</th>
-                                <th>Объект</th>
-                                <th>Адрес</th>
-                                <th>Расположение</th>
-                                <th>Мощн. (м³/ч)</th>
-                                <th>Модель</th>
-                                <th>№</th>
-                                <th>Пломба</th>
-                                <th>Ст. модель</th>
-                                <th>Ст. №</th>
-                                <th>Ст. показ.</th>
-                                <th>Направл.</th>
-                                <th>SIM</th>
-                                <th>Дата</th>
-                            </tr>
-                        </thead>
-                        <tbody id="fullTableBody"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+<div class="container" id="app">
+  
+  <div id="formScreen">
+    
+    <!-- Заголовок -->
+    <div class="card" style="padding-bottom: 12px;">
+      <h1 style="margin-bottom: 0;">СТМ-население</h1>
     </div>
 
-    <div class="modal-overlay" id="detailsModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3 id="detailsTitle">Детализация</h3>
-                <button class="modal-close" onclick="closeModal('detailsModal')">&times;</button>
-            </div>
-            <div class="modal-body" id="detailsBody">
-                <div class="empty-state">Загрузка…</div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-close" onclick="closeModal('detailsModal')">Закрыть</button>
-            </div>
+    <!-- Блок 1: Объект -->
+    <div class="card">
+      <h2>📍 Объект установки</h2>
+      
+      <div class="form-group">
+        <label class="field-label required">Город/Городской округ</label>
+        <select id="cityName">
+          <option value="" disabled selected>Выберите город...</option>
+          <option value="Грозный / Грозненский р-н">Грозный / Грозненский р-н</option>
+          <option value="Гудермес / Гудермесский р-н">Гудермес / Гудермесский р-н</option>
+          <option value="Курчалой / Курчалоевский р-н">Курчалой / Курчалоевский р-н</option>
+          <option value="Шали / Шалинский р-н">Шали / Шалинский р-н</option>
+          <option value="Урус-Мартан / Урус-Мартановский р-н">Урус-Мартан / Урус-Мартановский р-н</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="field-label required">Адрес объекта</label>
+        <input type="text" id="address" placeholder="г. Москва, ул. Ленина, д. 15">
+      </div>
+      
+      <div class="form-group">
+        <label class="field-label required">Расположение счетчика</label>
+        <div id="uirgWrapper" class="radio-wrapper">
+          <div class="radio-grid">
+            <label class="radio-card"><input type="radio" name="uirg" value="Улица"> Улица</label>
+            <label class="radio-card"><input type="radio" name="uirg" value="Котельная"> Котельная</label>
+            <label class="radio-card"><input type="radio" name="uirg" value="Под навесом"> Под навесом</label>
+            <label class="radio-card"><input type="radio" name="uirg" value="В помещении"> В помещении</label>
+          </div>
         </div>
+      </div>
     </div>
 
-    <script>
-        // ============================================================
-        // 1. СВЕТЛЫЙ ФОН ЧАСТИЦ
-        // ============================================================
-        (function initStars() {
-            const canvas = document.getElementById('stars-canvas');
-            const ctx = canvas.getContext('2d');
-            let W, H;
-            const stars = [];
-            const NUM_STARS = 120; // Немного убавил для чистоты светлого фона
-            const MAX_SPEED = 0.4;
+    <!-- Блок 2: Монтаж -->
+    <div class="card">
+      <h2>🔧 Данные монтажа</h2>
+      
+      <div class="form-group">
+        <label class="field-label required">ФИО монтажника</label>
+        <input type="text" id="installerName" placeholder="Иванов И.И.">
+      </div>
 
-            function resize() {
-                W = canvas.width = window.innerWidth;
-                H = canvas.height = window.innerHeight;
-            }
-            window.addEventListener('resize', resize);
-            resize();
+      <div class="form-group">
+        <label class="field-label required">Модель нового счетчика</label>
+        <select id="meterModel">
+          <option value="" disabled selected>Выберите модель...</option>
+          <option value="СМТ-Смарт G6">СМТ-Смарт G6</option>
+          <option value="Миртек G4">Миртек G4</option>
+          <option value="Миртек G6">Миртек G6</option>
+        </select>
+      </div>
+    </div>
 
-            for (let i = 0; i < NUM_STARS; i++) {
-                stars.push({
-                    x: Math.random() * W,
-                    y: Math.random() * H,
-                    r: Math.random() * 1.5 + 0.5,
-                    speed: Math.random() * MAX_SPEED + 0.1,
-                    opacity: Math.random() * 0.4 + 0.1, // Более прозрачные для светлого фона
-                });
-            }
+    <!-- Блок 3: Потребитель -->
+    <div class="card">
+      <h2>👤 Потребитель</h2>
 
-            function draw() {
-                ctx.clearRect(0, 0, W, H);
-                for (const s of stars) {
-                    ctx.beginPath();
-                    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-                    ctx.fillStyle = `rgba(37, 99, 235, ${s.opacity})`; // Сделал частицы мягко-синими
-                    ctx.fill();
-                    s.opacity += (Math.random() - 0.5) * 0.01;
-                    s.opacity = Math.min(0.5, Math.max(0.1, s.opacity));
-                    s.y += s.speed * 0.3;
-                    if (s.y > H) {
-                        s.y = 0;
-                        s.x = Math.random() * W;
-                    }
-                }
-                requestAnimationFrame(draw);
-            }
-            draw();
-        })();
+      <div class="form-group">
+        <label class="field-label required">ФИО потребителя</label>
+        <input type="text" id="consumerName" placeholder="Пример: Петров П.П.">
+      </div>
+      
+      <div class="form-group">
+        <label class="field-label required">Лицевой счет</label>
+        <div style="display: flex; gap: 8px;">
+          <input type="text" inputmode="numeric" pattern="[0-9]*" id="accountNumber" placeholder="Пример: 123456789">
+          <label style="display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.9rem; flex-shrink: 0; background: #f1f5f9; padding: 0 12px; border-radius: 10px; border: 1px solid #cbd5e1; cursor:pointer;">
+            <input type="checkbox" id="noAccountCb" style="width: 18px; height: 18px; margin: 0; accent-color: #2b7a4b;"> Нет
+          </label>
+        </div>
+      </div>
 
-        // ============================================================
-        // 2. FIREBASE + ЛОГИКА
-        // ============================================================
-        const firebaseConfig = {
-            apiKey: "AIzaSyCofoBIWqUX_P8pQUIKKbitEG2GTbXT7Ak",
-            authDomain: "botstm100.firebaseapp.com",
-            databaseURL: "https://botstm100-default-rtdb.europe-west1.firebasedatabase.app",
-            projectId: "botstm100",
-            storageBucket: "botstm100.firebasestorage.app",
-            messagingSenderId: "462080340216",
-            appId: "1:462080340216:web:c452983a1501f0bf170b0d"
+      <div class="form-group">
+        <label class="field-label required">Подпись потребителя</label>
+        <div id="signatureWrapper" style="padding: 12px; text-align: center; border: 1px solid #ef4444; border-radius: 12px; background: transparent; transition: border-color 0.3s; margin-bottom: 8px;">
+          <span id="signatureStatusText" style="display:block; margin-bottom: 8px; color: #ef4444; font-weight: 600;">Подпись отсутствует</span>
+          <img id="signaturePreview" style="width: 100%; max-height: 100px; object-fit: contain; margin-bottom: 12px; display: none;" />
+          <button type="button" id="openSignatureBtn" class="secondary" style="font-size: 0.9rem; padding: 10px;">✍️ Открыть поле для подписи</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Кнопки управления -->
+    <div style="padding: 0 4px;">
+      <button id="startReportBtn" style="margin-bottom: 12px;">▶ Начать фотоотчёт</button>
+      <button id="openPostponedBtn" class="secondary" style="margin-bottom: 12px; display: none; background: #fefce8; border: 1px solid #eab308; color: #a16207;">🕒 Отложенные отчеты (<span id="postponedCount">0</span>)</button>
+      <button id="openArchivesBtn" class="secondary">📁 Сохраненные архивы</button>
+    </div>
+
+  </div>
+
+  <div id="checklistScreen" class="hidden">
+    <div class="card" style="display: flex; justify-content: space-between; align-items: center;">
+      <span style="font-weight: 600; font-size: 0.95rem; color: #334155;">Статус GPS:</span>
+      <span id="displayCoords" class="geo-status-badge geo-searching" style="margin-top: 0;">Ожидание спутников...</span>
+    </div>
+    
+    <div id="syncStatus" class="instruction-box hidden" style="background: #fef3c7; border-color: #fde68a; color: #b45309; margin-bottom: 16px;">
+      Внимание: Нет сети. Отчет будет сохранен локально и отправлен в базу позже.
+    </div>
+
+    <!-- Контейнер для сгруппированных фотокарточек -->
+    <div id="mandatoryListContainer"></div>
+
+    <div class="card">
+      <h2 style="font-size: 0.95rem; margin-bottom: 10px;">💬 Комментарий (необязательно)</h2>
+      <textarea id="reportComment" rows="3" placeholder="Дополнительная информация, особенности монтажа..." style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #cbd5e1; font-family: inherit; font-size: 0.9rem; resize: vertical;"></textarea>
+    </div>
+
+    <div class="card">
+      <div class="flex-btns" style="display: flex; flex-direction: column; gap: 12px;">
+        <button id="generateReportBtn" disabled>Сформировать архив</button>
+        
+        <div id="manualSendInstructions" class="instruction-box hidden">
+          <strong>✓ Архив сохранен!</strong><br>
+          <span id="savedFileNameSpan" style="font-size:0.85rem; color:#475569;"></span>
+        </div>
+
+        <button id="shareTextBtn" class="share-btn hidden">✉️ Отправить сейчас</button>
+        <button id="postponeReportBtn" class="secondary" style="border: 1px solid #eab308; color: #a16207; background: #fefce8;">🕒 Отложить отчет</button>
+        <button id="goBackBtn" class="action-btn-outline">Назад</button>
+        <button id="resetAllBtn" class="action-btn-danger">Завершить</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="archiveScreen" class="hidden">
+    <div class="card">
+      <h2>📁 Сохраненные архивы</h2>
+      <div id="archiveListContainer" class="archive-list"></div>
+      <button id="backFromArchivesBtn" class="secondary" style="margin-top: 16px;">⬅ Назад</button>
+    </div>
+  </div>
+
+  <!-- ЭКРАН ОТЛОЖЕННЫХ ОТЧЕТОВ -->
+  <div id="postponedScreen" class="hidden">
+    <div class="card">
+      <h2>🕒 Отложенные отчеты</h2>
+      <div style="font-size: 0.85rem; color: #64748b; margin-bottom: 12px;">Выберите отчет, чтобы продолжить работу с ним.</div>
+      <div id="postponedListContainer" class="archive-list"></div>
+      <button id="backFromPostponedBtn" class="secondary" style="margin-top: 16px;">⬅ Назад</button>
+    </div>
+  </div>
+
+  <div id="multiActionBar" class="multi-action-bar-wrapper hidden">
+    <div class="action-row">
+      <button id="selectAllBtn" class="secondary" style="background:#f1f5f9; color:#475569;">Выделить все</button>
+      <button id="deselectAllBtn" class="secondary" style="background:#f1f5f9; color:#475569;">Снять все</button>
+    </div>
+    <div class="action-row">
+      <button id="multiSendBtn" class="share-btn">Отправить</button>
+      <button id="multiDeleteBtn" class="danger-btn">Удалить</button>
+    </div>
+  </div>
+
+  <footer>iPhone | Версия 1.0 (СТМ-население)</footer>
+</div>
+
+<div id="photoModal" class="modal">
+  <div class="modal-close" id="modalClose">&times;</div>
+  <div class="modal-wrapper" id="modalWrapper"><img src="" class="modal-img" id="modalImg" alt="Просмотр"></div>
+</div>
+
+<div id="scannerModal">
+  <div id="scannerModalClose">&times;</div>
+  <div id="reader"></div>
+  <div class="scanner-tip">Наведите камеру на QR или штрихкод.<br>Фокус может занять несколько секунд.</div>
+</div>
+
+<div id="signatureModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 3000; justify-content: center; align-items: center; padding: 16px; flex-direction: column;">
+  <div style="background: white; width: 100%; max-width: 500px; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+    <h2 style="text-align: center; margin: 0; font-size: 1.2rem;">Поставьте подпись</h2>
+    <div style="border: 2px solid #cbd5e1; border-radius: 12px; touch-action: none; background: #fff; overflow: hidden; position: relative;" id="canvasContainer">
+      <canvas id="signatureCanvas" style="width: 100%; height: 450px; display: block;"></canvas>
+    </div>
+    <div style="display: flex; gap: 10px;">
+      <button type="button" id="clearSignatureBtn" class="danger-btn" style="flex: 1; padding: 12px; font-size: 0.95rem;">Очистить</button>
+      <button type="button" id="saveSignatureBtn" style="flex: 1; padding: 12px; font-size: 0.95rem;">✅ Сохранить</button>
+    </div>
+    <button type="button" id="closeSignatureModalBtn" class="secondary" style="padding: 12px; font-size: 0.95rem;">Отмена</button>
+  </div>
+</div>
+
+<div id="confirmFinishModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 5000; justify-content: center; align-items: center; padding: 16px;">
+  <div style="background: white; border-radius: 16px; padding: 24px; width: 100%; max-width: 320px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+    <h3 style="margin: 0 0 20px 0; font-size: 1.2rem; color: #1e293b;">Завершить?</h3>
+    <div style="display: flex; gap: 12px;">
+      <button id="confirmFinishBtn" class="danger-btn" style="flex: 1; padding: 12px; font-size: 0.95rem; margin: 0;">Завершить</button>
+      <button id="cancelFinishBtn" class="secondary" style="flex: 1; padding: 12px; font-size: 0.95rem; margin: 0;">Отмена</button>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно для поиска моделей старого счетчика -->
+<div id="modelSearchModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 6000; justify-content: center; align-items: center; padding: 16px; flex-direction: column;">
+  <div style="background: white; width: 100%; max-width: 500px; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; max-height: 80vh;">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h2 style="margin: 0; font-size: 1.2rem; color: #1e293b;">Выберите модель</h2>
+      <div id="closeModelSearchBtn" style="font-size: 1.8rem; color: #64748b; cursor: pointer; line-height: 1; padding: 0 8px;">&times;</div>
+    </div>
+    <input type="text" id="modelSearchInput" placeholder="🔍 Поиск модели..." style="padding: 12px; border-radius: 10px; border: 1px solid #cbd5e1; font-size: 1rem; width: 100%;">
+    <div id="modelListContainer" style="overflow-y: auto; flex-grow: 1; display: flex; flex-direction: column; gap: 6px;"></div>
+  </div>
+</div>
+
+<input type="file" id="globalFileInput" accept="image/*" multiple class="hidden">
+
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js?v=1.0').then(() => console.log('PWA Offline Ready'));
+  }
+
+  // ---- Firebase config ----
+  const firebaseConfig = {
+    apiKey: "AIzaSyCofoBIWqUX_P8pQUIKKbitEG2GTbXT7Ak",
+    authDomain: "botstm100.firebaseapp.com",
+    databaseURL: "https://botstm100-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "botstm100",
+    storageBucket: "botstm100.firebasestorage.app",
+    messagingSenderId: "462080340216",
+    appId: "1:462080340216:web:c452983a1501f0bf170b0d"
+  };
+
+  let fbDb = null;
+  function initFirebase() {
+    if (typeof firebase !== 'undefined') {
+      firebase.initializeApp(firebaseConfig);
+      fbDb = firebase.database();
+      fbDb.ref('.info/connected').on('value', snap => {
+        if (snap.val() === true) {
+          syncPendingRecords();
+        }
+      });
+      syncPendingRecords();
+    }
+  }
+
+  // ---- Вспомогательные функции для ЖЕЛЕЗОБЕТОННОГО сохранения Base64 ----
+  function uint8ToBase64(u8Arr) {
+    let CHUNK_SIZE = 8192; // Безопасный размер для слабого железа
+    let index = 0;
+    let length = u8Arr.length;
+    let result = '';
+    let slice;
+    while (index < length) {
+      slice = u8Arr.subarray(index, Math.min(index + CHUNK_SIZE, length));
+      result += String.fromCharCode.apply(null, slice);
+      index += CHUNK_SIZE;
+    }
+    return btoa(result);
+  }
+
+  function base64ToUint8(base64) {
+    let binary_string = window.atob(base64);
+    let len = binary_string.length;
+    let bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+      bytes[i] = binary_string.charCodeAt(i);
+    }
+    return bytes;
+  }
+
+  // ---- IndexedDB УНИВЕРСАЛЬНАЯ БАЗА ----
+  let db;
+  // Версия 5 форсирует обновление схемы базы данных и гарантирует наличие таблицы archives
+  const dbRequest = indexedDB.open("EtalonPWA_DB", 5);
+  dbRequest.onupgradeneeded = (e) => {
+    const database = e.target.result;
+    if (!database.objectStoreNames.contains("archives")) { database.createObjectStore("archives", { keyPath: "name" }); }
+    if (!database.objectStoreNames.contains("drafts")) { database.createObjectStore("drafts", { keyPath: "id" }); }
+    if (!database.objectStoreNames.contains("pending_sync")) { database.createObjectStore("pending_sync", { keyPath: "id", autoIncrement: true }); }
+  };
+  dbRequest.onsuccess = (e) => { db = e.target.result; checkDraft(); updatePostponedCount(); };
+  dbRequest.onerror = (e) => console.error("IndexedDB error", e);
+
+  // ---- Конфигурация чек-листа ----
+  const mandatoryConfig = [
+    { title: "🏠 Общий вид объекта (здания)", prefix: "01_building" },
+    { title: "🛣️ Газопровод издалека", prefix: "02_place_before" },
+    { title: "🕰️ Общий вид старого счетчика", prefix: "03_old_meter_view", hasOldModelInput: true }, 
+    { title: "🏷️ Серийный № и показания старого", prefix: "04_old_meter_serial", hasOldSerialAndReadings: true }, 
+    { title: "🏭 Пломба заводская 2-3 фото", prefix: "04_1_factory_seal" },
+    { title: "👮 Пломба контролера старого", prefix: "05_old_seal_controller", hasInput: true }, 
+    { title: "⬅️ Направление старого счетчика", prefix: "06_old_gas_direction" },
+    { title: "📦 Общий вид нового счётчика", prefix: "07_new_meter_view" },
+    { title: "🆕 Серийный № нового", prefix: "08_new_meter_serial", hasSerialInput: true }, 
+    { title: "📟 Показания нового", prefix: "09_new_meter_readings" },
+    { title: "↗️ Направление нового счетчика", prefix: "10_new_gas_direction", hasDirectionInput: true }, 
+    { title: "🛡️ Пломба нового счетчика", prefix: "11_new_seal" },
+    { title: "📑 Паспорт, отметка, SIM", prefix: "12_passport_sim", hasSimInput: true },
+    { title: "🗃️ Счетчик с коробом", prefix: "07_1_meter_with_box", conditionalMandatory: true }
+  ];
+
+  let state = { 
+    cityName: '', address: '', uirgLocation: '', installerName: '', serialNumber: '', meterModel: '', 
+    consumerName: '', accountNumber: '', signatureDataUrl: '',
+    controllerSeal: '',
+    oldMeterCount: 1,
+    oldMeterModel: '', oldMeterSerial: '', oldMeterReadings: '', 
+    oldMeterModel2: '', oldMeterSerial2: '', oldMeterReadings2: '', controllerSeal2: '',
+    oldMeterModel3: '', oldMeterSerial3: '', oldMeterReadings3: '', controllerSeal3: '',
+    newGasDirection: '', simCardNumber: '',
+    noOldMeter: false, comment: '',
+    coordinates: null, creationDate: null, gpsLocked: false,
+    photos: Array.from({ length: mandatoryConfig.length }, () => []), 
+    photos2: Array.from({ length: mandatoryConfig.length }, () => []), 
+    photos3: Array.from({ length: mandatoryConfig.length }, () => []), 
+    currentActiveIndex: null, currentActiveMeter: 1
+  };
+  let currentZipName = "";
+  let watchId = null; let gpsTimeoutId = null;
+
+  // DOM
+  const formScreen = document.getElementById('formScreen');
+  const checklistScreen = document.getElementById('checklistScreen');
+  const archiveScreen = document.getElementById('archiveScreen');
+  const mandatoryListContainer = document.getElementById('mandatoryListContainer');
+  const globalFileInput = document.getElementById('globalFileInput');
+  const generateBtn = document.getElementById('generateReportBtn');
+  const shareTextBtn = document.getElementById('shareTextBtn');
+  const displayCoords = document.getElementById('displayCoords');
+  const manualSendInstructions = document.getElementById('manualSendInstructions');
+  const savedFileNameSpan = document.getElementById('savedFileNameSpan');
+  const archiveListContainer = document.getElementById('archiveListContainer');
+  const multiActionBar = document.getElementById('multiActionBar');
+  const syncStatus = document.getElementById('syncStatus');
+
+  function updateSignaturePreview() {
+    const preview = document.getElementById('signaturePreview');
+    const statusText = document.getElementById('signatureStatusText');
+    if(preview && statusText) {
+        if (state.signatureDataUrl) {
+            preview.src = state.signatureDataUrl;
+            preview.style.display = 'block';
+            statusText.innerText = 'Подпись сохранена';
+            statusText.style.color = '#15803d'; 
+        } else {
+            preview.src = '';
+            preview.style.display = 'none';
+            statusText.innerText = 'Подпись отсутствует';
+            statusText.style.color = '#ef4444'; 
+        }
+    }
+  }
+
+  function updateMainValidation() {
+    ['address', 'installerName', 'consumerName', 'accountNumber'].forEach(id => {
+      const el = document.getElementById(id);
+      if(el) el.classList.toggle('valid', state[id] && state[id].trim() !== '');
+    });
+    const cName = document.getElementById('cityName'); if(cName) cName.classList.toggle('valid', state.cityName !== '');
+    const mModel = document.getElementById('meterModel'); if(mModel) mModel.classList.toggle('valid', state.meterModel !== '');
+    const uirgGrp = document.getElementById('uirgWrapper'); if (uirgGrp) uirgGrp.classList.toggle('valid', state.uirgLocation !== '');
+    const sigWrap = document.getElementById('signatureWrapper');
+    if(sigWrap) {
+      sigWrap.classList.toggle('valid', !!state.signatureDataUrl);
+      updateSignaturePreview();
+    }
+  }
+
+  // Подпись (Canvas)
+  const sigCanvas = document.getElementById('signatureCanvas');
+  const sigCtx = sigCanvas.getContext('2d', { willReadFrequently: true });
+  let isDrawingSig = false;
+
+  function initSignatureCanvas() {
+    const container = document.getElementById('canvasContainer');
+    sigCanvas.width = container.clientWidth || (window.innerWidth - 68);
+    sigCanvas.height = 450; 
+    sigCtx.lineWidth = 3; 
+    sigCtx.strokeStyle = '#1565C0'; 
+    sigCtx.lineCap = 'round'; 
+    sigCtx.lineJoin = 'round'; 
+    sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+    if (state.signatureDataUrl) { 
+      const img = new Image(); 
+      img.onload = () => sigCtx.drawImage(img, 0, 0); 
+      img.src = state.signatureDataUrl; 
+    }
+  }
+
+  function getSigPos(e) { const rect = sigCanvas.getBoundingClientRect(); const clientX = e.touches ? e.touches[0].clientX : e.clientX; const clientY = e.touches ? e.touches[0].clientY : e.clientY; return { x: clientX - rect.left, y: clientY - rect.top }; }
+  function startSig(e) { e.preventDefault(); isDrawingSig = true; const pos = getSigPos(e); sigCtx.beginPath(); sigCtx.moveTo(pos.x, pos.y); }
+  function drawSig(e) { e.preventDefault(); if (!isDrawingSig) return; const pos = getSigPos(e); sigCtx.lineTo(pos.x, pos.y); sigCtx.stroke(); }
+  function stopSig(e) { if (e) e.preventDefault(); if (isDrawingSig) { isDrawingSig = false; } }
+
+  sigCanvas.addEventListener('mousedown', startSig); sigCanvas.addEventListener('mousemove', drawSig); sigCanvas.addEventListener('mouseup', stopSig); sigCanvas.addEventListener('mouseout', stopSig);
+  sigCanvas.addEventListener('touchstart', startSig, { passive: false }); sigCanvas.addEventListener('touchmove', drawSig, { passive: false }); sigCanvas.addEventListener('touchend', stopSig, { passive: false }); sigCanvas.addEventListener('touchcancel', stopSig, { passive: false });
+
+  document.getElementById('openSignatureBtn').addEventListener('click', () => {
+    document.getElementById('signatureModal').style.display = 'flex';
+    setTimeout(initSignatureCanvas, 50);
+  });
+
+  document.getElementById('closeSignatureModalBtn').addEventListener('click', () => {
+    document.getElementById('signatureModal').style.display = 'none';
+  });
+
+  document.getElementById('clearSignatureBtn').addEventListener('click', () => { 
+    sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height); 
+  });
+
+  document.getElementById('saveSignatureBtn').addEventListener('click', () => {
+    if (isSignatureEmpty()) {
+        state.signatureDataUrl = '';
+    } else {
+        state.signatureDataUrl = sigCanvas.toDataURL('image/png');
+    }
+    saveDraft();
+    updateMainValidation();
+    document.getElementById('signatureModal').style.display = 'none';
+  });
+
+  function isSignatureEmpty() {
+    const imgData = sigCtx.getImageData(0, 0, sigCanvas.width, sigCanvas.height);
+    for (let i = 3; i < imgData.data.length; i += 4) { if (imgData.data[i] !== 0) return false; } return true;
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    const savedName = localStorage.getItem('installerName'); if (savedName) document.getElementById('installerName').value = savedName;
+    updateMainValidation();
+  });
+  window.addEventListener('resize', () => {
+    if(document.getElementById('signatureModal').style.display === 'flex') {
+      initSignatureCanvas();
+    }
+  });
+
+  function formatDateTime(isoString) { if (!isoString) return '—'; const d = new Date(isoString); return d.toLocaleString('ru-RU', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'}); }
+  function dataURItoUint8Array(dataURI) { const base64 = dataURI.split(',')[1]; const binary_string = window.atob(base64); const len = binary_string.length; const bytes = new Uint8Array(len); for (let i = 0; i < len; i++) { bytes[i] = binary_string.charCodeAt(i); } return bytes; }
+
+  function saveDraft() {
+    if (!db) return;
+    const draftState = {
+      cityName: state.cityName, address: state.address, uirgLocation: state.uirgLocation, installerName: state.installerName, serialNumber: state.serialNumber, meterModel: state.meterModel,
+      consumerName: state.consumerName, accountNumber: state.accountNumber, signatureDataUrl: state.signatureDataUrl,
+      controllerSeal: state.controllerSeal,
+      oldMeterCount: state.oldMeterCount,
+      oldMeterModel: state.oldMeterModel, oldMeterSerial: state.oldMeterSerial, oldMeterReadings: state.oldMeterReadings, 
+      oldMeterModel2: state.oldMeterModel2, oldMeterSerial2: state.oldMeterSerial2, oldMeterReadings2: state.oldMeterReadings2, controllerSeal2: state.controllerSeal2,
+      oldMeterModel3: state.oldMeterModel3, oldMeterSerial3: state.oldMeterSerial3, oldMeterReadings3: state.oldMeterReadings3, controllerSeal3: state.controllerSeal3,
+      newGasDirection: state.newGasDirection, simCardNumber: state.simCardNumber,
+      noOldMeter: state.noOldMeter, comment: state.comment,
+      coordinates: state.coordinates, creationDate: state.creationDate, gpsLocked: state.gpsLocked, 
+      photos: state.photos, photos2: state.photos2, photos3: state.photos3
+    };
+    db.transaction("drafts", "readwrite").objectStore("drafts").put({ id: "current", data: draftState });
+  }
+
+  function clearDraft() { if (db) { db.transaction("drafts", "readwrite").objectStore("drafts").delete("current"); } }
+
+  function checkDraft() {
+    if (!db) return;
+    const req = db.transaction("drafts", "readonly").objectStore("drafts").get("current");
+    req.onsuccess = (e) => {
+      const result = e.target.result;
+      if (result && result.data) {
+        const d = result.data;
+        state.cityName = d.cityName || ''; state.address = d.address || ''; state.uirgLocation = d.uirgLocation || ''; state.installerName = d.installerName || ''; state.serialNumber = d.serialNumber || ''; state.meterModel = d.meterModel || ''; state.consumerName = d.consumerName || ''; state.accountNumber = d.accountNumber || ''; state.controllerSeal = d.controllerSeal || ''; 
+        state.oldMeterCount = d.oldMeterCount || 1;
+        state.oldMeterModel = d.oldMeterModel || ''; state.oldMeterSerial = d.oldMeterSerial || ''; state.oldMeterReadings = d.oldMeterReadings || '';
+        state.oldMeterModel2 = d.oldMeterModel2 || ''; state.oldMeterSerial2 = d.oldMeterSerial2 || ''; state.oldMeterReadings2 = d.oldMeterReadings2 || ''; state.controllerSeal2 = d.controllerSeal2 || '';
+        state.oldMeterModel3 = d.oldMeterModel3 || ''; state.oldMeterSerial3 = d.oldMeterSerial3 || ''; state.oldMeterReadings3 = d.oldMeterReadings3 || ''; state.controllerSeal3 = d.controllerSeal3 || '';
+        state.newGasDirection = d.newGasDirection || ''; state.simCardNumber = d.simCardNumber || ''; state.signatureDataUrl = d.signatureDataUrl || ''; state.noOldMeter = d.noOldMeter || false; state.comment = d.comment || ''; state.coordinates = d.coordinates || null; state.creationDate = d.creationDate || null; state.gpsLocked = d.gpsLocked || false;
+        
+        if (d.photos) { state.photos = d.photos; while (state.photos.length < mandatoryConfig.length) { state.photos.push([]); } }
+        state.photos2 = d.photos2 || Array.from({ length: mandatoryConfig.length }, () => []);
+        state.photos3 = d.photos3 || Array.from({ length: mandatoryConfig.length }, () => []);
+        
+        document.getElementById('cityName').value = state.cityName; document.getElementById('address').value = state.address; document.getElementById('installerName').value = state.installerName; document.getElementById('meterModel').value = state.meterModel; document.getElementById('consumerName').value = state.consumerName; document.getElementById('accountNumber').value = state.accountNumber; document.getElementById('reportComment').value = state.comment;
+        if (state.accountNumber === "Нет") document.getElementById('noAccountCb').checked = true;
+        if (state.uirgLocation) { const radio = document.querySelector(`input[name="uirg"][value="${state.uirgLocation}"]`); if (radio) radio.checked = true; }
+        
+        updateMainValidation();
+        if (state.creationDate) {
+          formScreen.classList.add('hidden'); checklistScreen.classList.remove('hidden');
+          renderChecklist();
+          if (!state.gpsLocked) { startActiveGeoSearch(); } else if (state.coordinates && !state.coordinates.error) { displayCoords.className = "geo-status-badge geo-success"; displayCoords.innerText = `${state.coordinates.lat.toFixed(6)}, ${state.coordinates.lng.toFixed(6)} (~${Math.round(state.coordinates.acc)}м) - Зафиксировано`; } else { displayCoords.className = "geo-status-badge geo-error"; displayCoords.innerText = "Координаты не зафиксированы"; }
+        }
+      }
+    };
+  }
+
+  function updatePostponedCount() {
+    if (!db) return;
+    const req = db.transaction("drafts", "readonly").objectStore("drafts").getAllKeys();
+    req.onsuccess = (e) => {
+        const keys = e.target.result;
+        const postponedKeys = keys.filter(k => k.toString().startsWith("postponed_"));
+        const btn = document.getElementById('openPostponedBtn');
+        if (postponedKeys.length > 0) {
+            btn.style.display = 'block';
+            document.getElementById('postponedCount').innerText = postponedKeys.length;
+        } else {
+            btn.style.display = 'none';
+        }
+    };
+  }
+
+  function startActiveGeoSearch() {
+    if (state.gpsLocked) return;
+    if (!navigator.geolocation) { state.coordinates = { error: "GPS недоступен" }; displayCoords.className = "geo-status-badge geo-error"; displayCoords.innerText = "GPS недоступен"; saveDraft(); return; }
+    displayCoords.className = "geo-status-badge geo-searching"; displayCoords.innerText = "Ожидание спутников (20 сек)...";
+    if (watchId !== null) navigator.geolocation.clearWatch(watchId); if (gpsTimeoutId !== null) clearTimeout(gpsTimeoutId);
+    watchId = navigator.geolocation.watchPosition(
+      (pos) => { state.coordinates = { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy }; displayCoords.className = "geo-status-badge geo-searching"; displayCoords.innerText = `${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)} (~${Math.round(pos.coords.accuracy)}м) - Идет фиксация...`; saveDraft(); },
+      (err) => { if (!state.coordinates || state.coordinates.error) { state.coordinates = { error: "Не удалось получить GPS" }; displayCoords.className = "geo-status-badge geo-error"; displayCoords.innerText = "Слабый сигнал. Ищем дальше..."; saveDraft(); } },
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+    );
+    gpsTimeoutId = setTimeout(() => {
+      if (watchId !== null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
+      state.gpsLocked = true; saveDraft();
+      if (state.coordinates && !state.coordinates.error) { displayCoords.className = "geo-status-badge geo-success"; displayCoords.innerText = `${state.coordinates.lat.toFixed(6)}, ${state.coordinates.lng.toFixed(6)} (~${Math.round(state.coordinates.acc)}м) - Зафиксировано`; } else { displayCoords.className = "geo-status-badge geo-error"; displayCoords.innerText = "Спутники не найдены"; }
+    }, 20000);
+  }
+
+  function syncPendingRecords() {
+    if (!navigator.onLine || !db || !fbDb) return;
+    db.transaction("pending_sync", "readonly").objectStore("pending_sync").getAll().onsuccess = (e) => {
+      e.target.result.forEach(record => {
+        fbDb.ref('bot_installations').push(record.data).then(() => { db.transaction("pending_sync", "readwrite").objectStore("pending_sync").delete(record.id); }).catch(err => console.log("Firebase sync err", err));
+      });
+    };
+  }
+
+  window.addEventListener('online', () => { syncStatus.classList.add('hidden'); syncPendingRecords(); });
+  window.addEventListener('offline', () => { syncStatus.classList.remove('hidden'); });
+
+  document.getElementById('cityName').addEventListener('change', (e) => { state.cityName = e.target.value; saveDraft(); updateMainValidation(); });
+  ['address', 'installerName', 'consumerName'].forEach(id => { document.getElementById(id).addEventListener('input', (e) => { state[id] = e.target.value.trim(); saveDraft(); updateMainValidation(); }); });
+  document.getElementById('meterModel').addEventListener('change', (e) => { state.meterModel = e.target.value; saveDraft(); updateMainValidation(); });
+  document.querySelectorAll('input[name="uirg"]').forEach(radio => { radio.addEventListener('change', (e) => { state.uirgLocation = e.target.value; saveDraft(); updateMainValidation(); }); });
+
+  document.getElementById('reportComment').addEventListener('input', (e) => { state.comment = e.target.value; saveDraft(); });
+
+  const accInput = document.getElementById('accountNumber'); const noAccCb = document.getElementById('noAccountCb');
+  noAccCb.addEventListener('change', (e) => { if (e.target.checked) { accInput.value = "Нет"; state.accountNumber = "Нет"; } else { accInput.value = ""; state.accountNumber = ""; } saveDraft(); updateMainValidation(); });
+  accInput.addEventListener('input', (e) => { state.accountNumber = e.target.value.trim(); if (state.accountNumber !== "Нет") noAccCb.checked = false; saveDraft(); updateMainValidation(); });
+
+  let html5QrCode = null;
+  function startWebScanner(onSuccess) {
+    const modal = document.getElementById('scannerModal'); modal.style.display = 'flex';
+    if (!html5QrCode) { html5QrCode = new Html5Qrcode("reader"); }
+    html5QrCode.start( { facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 }, formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE, Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8, Html5QrcodeSupportedFormats.UPC_A, Html5QrcodeSupportedFormats.DATA_MATRIX ] },
+      (decodedText, decodedResult) => { stopWebScanner(); onSuccess(decodedText); }, (errorMessage) => { }
+    ).catch((err) => { alert("Не удалось запустить камеру. Проверьте разрешения."); stopWebScanner(); });
+  }
+  function stopWebScanner() { const modal = document.getElementById('scannerModal'); if (html5QrCode && html5QrCode.isScanning) { html5QrCode.stop().then(() => { modal.style.display = 'none'; }).catch(() => { modal.style.display = 'none'; }); } else { modal.style.display = 'none'; } }
+  document.getElementById('scannerModalClose').addEventListener('click', stopWebScanner);
+
+  // ====== ЛОГИКА ЖИВОГО ПОИСКА ДЛЯ СТАРОГО СЧЕТЧИКА ======
+  const allOldMeterModels = [
+    "СГМН-1 G6", "СГМН-1М1-G6", "СГМН-МТ1-G6", "BK-G1,6", "BK-G2,5", "BK-G4", "BK-G4T",
+    "BK-G6", "BK-G6T", "BK-G6MT", "ВКР-G4T", "G2.5 \"ОМЕГА\"-м", "G4 \"ОМЕГА\"-м", "G6 \"ОМЕГА\"-м",
+    "GS-76-016A", "G ETC мод. GS-76-016A", "GS-80-025B", "GS-84-04C", "GS-84-06C", "Вектор G4",
+    "Вектор-Т G4", "Вектор-Т G6", "ВЕКТОР-М G1,6", "Гранд-1,6", "Гранд-3,2", "Гранд-4",
+    "Гранд-4ТК", "Гранд-6ТК", "Гранд-10ТК", "Гранд-SPI-10", "MKM G2.5", "MKM G6",
+    "Novator G2,5 РЛ", "Novator G4 РЛ", "Novator G6 РЛ", "Si-G4", "Бетар СГБМ-1.6",
+    "Бетар СГБМ-1,6М", "Бетар СГБМ-3.2", "СГБ-1.8", "СГБ G2,5", "СГБ G2,5 Сигнал", "СГБ G4-1",
+    "СГБ G4 Сигнал", "СГБ Смарт G4-1", "СГБ Смарт G6", "СГБЭТ G4-1", "СГБЭТ G6 \"Pegas\"",
+    "СГД G4", "СГД G4 ТК", "СГД G6", "СГД G6 ТК", "СГД-3Т G6", "СГД Smart-G4 МТК GSM",
+    "СГДК-G10", "СГДК-G10 ТК", "СГ-СГК-1,6", "СГК-1,6", "СГК-G1,6", "СГК-4", "СГК-4-1",
+    "СГК G4 Сигнал", "СГК-G4", "СГМБ-1.6", "СГМБ-2.4", "СГМБ-3.2", "СГМБ-4", "СГМБ-4 ТК",
+    "СГМБ-4 GSM", "СГУ-G4", "СМТ-Смарт G4", "СМТ-Смарт G6", "СМТ-Смарт G10"
+  ];
+
+  let onModelSelectCallback = null;
+  const modelSearchModal = document.getElementById('modelSearchModal');
+  const modelSearchInput = document.getElementById('modelSearchInput');
+  const modelListContainer = document.getElementById('modelListContainer');
+
+  function renderModelList(filterText = '') {
+      modelListContainer.innerHTML = '';
+      const lowerFilter = filterText.toLowerCase();
+      const filtered = allOldMeterModels.filter(m => m.toLowerCase().includes(lowerFilter));
+      
+      if (filtered.length === 0) {
+          modelListContainer.innerHTML = '<div style="padding: 12px; color: #64748b; text-align: center;">Ничего не найдено</div>';
+          return;
+      }
+
+      filtered.forEach(m => {
+          const div = document.createElement('div');
+          div.innerText = m;
+          div.style.padding = '12px 16px';
+          div.style.background = '#f8fafc';
+          div.style.borderRadius = '10px';
+          div.style.border = '1px solid #cbd5e1';
+          div.style.cursor = 'pointer';
+          div.style.fontSize = '0.95rem';
+          div.onclick = () => {
+              if (onModelSelectCallback) onModelSelectCallback(m);
+              modelSearchModal.style.display = 'none';
+          };
+          modelListContainer.appendChild(div);
+      });
+  }
+
+  function openModelSearchModal(cb) {
+      onModelSelectCallback = cb;
+      modelSearchInput.value = '';
+      renderModelList();
+      modelSearchModal.style.display = 'flex';
+      setTimeout(() => modelSearchInput.focus(), 100);
+  }
+
+  document.getElementById('closeModelSearchBtn').addEventListener('click', () => {
+      modelSearchModal.style.display = 'none';
+  });
+
+  modelSearchInput.addEventListener('input', (e) => {
+      renderModelList(e.target.value);
+  });
+  // =======================================================
+
+  function renderChecklist() {
+    mandatoryListContainer.innerHTML = '';
+    
+    // Создаем карточки-группы для уменьшения визуальной нагрузки
+    const group1 = document.createElement('div'); group1.className = 'card';
+    group1.innerHTML = '<h2>📍 Общие фото объекта</h2><div class="photo-grid"></div>';
+    
+    const group2 = document.createElement('div'); group2.className = 'card';
+    group2.innerHTML = '<h2>🕰️ Демонтаж (Старый счетчик)</h2><div class="photo-grid"></div>';
+    
+    const group3 = document.createElement('div'); group3.className = 'card';
+    group3.innerHTML = '<h2>🆕 Монтаж (Новый счетчик)</h2><div class="photo-grid"></div>';
+    
+    mandatoryListContainer.appendChild(group1);
+    mandatoryListContainer.appendChild(group2);
+    mandatoryListContainer.appendChild(group3);
+
+    mandatoryConfig.forEach((cfg, idx) => {
+      const isOldMeterCfg = [2, 3, 4, 5, 6].includes(idx);
+      const isMandatory = !(cfg.conditionalMandatory && state.uirgLocation !== 'Улица');
+
+      const item = document.createElement('div'); item.className = 'photo-item';
+      
+      // ИСПРАВЛЕНИЕ: Блокируем клики ТОЛЬКО для элементов, которые НЕ содержат галочку (idx !== 2)
+      if (state.noOldMeter && isOldMeterCfg) {
+        if (idx !== 2) {
+          item.style.opacity = '0.4';
+          item.style.pointerEvents = 'none';
+          item.style.filter = 'grayscale(100%)';
+        }
+      }
+
+      let totalPhotos = state.photos[idx].length;
+      let metaHtml = '';
+      if (totalPhotos > 0) {
+          metaHtml = `<div class="photo-meta">Файлов: ${totalPhotos}</div>`;
+      } else {
+          if (isMandatory) {
+              metaHtml = `<div class="photo-meta" style="color:#ef4444;">Нет файлов *</div>`;
+          } else {
+              metaHtml = `<div class="photo-meta" style="color:#64748b;">Необязательно</div>`;
+          }
+      }
+
+      const headerDiv = document.createElement('div'); headerDiv.className = 'photo-header';
+      headerDiv.innerHTML = `<div><div class="photo-title">${cfg.title}</div>${metaHtml}</div>`;
+      item.appendChild(headerDiv);
+
+      if (idx === 2) {
+        const noMeterDiv = document.createElement('div');
+        noMeterDiv.style.marginBottom = '8px';
+        noMeterDiv.innerHTML = `<label style="display: flex; align-items: center; gap: 8px; font-size: 0.9rem; font-weight: 500; color: #ef4444; cursor: pointer;">
+          <input type="checkbox" style="width: 18px; height: 18px; accent-color: #ef4444;" ${state.noOldMeter ? 'checked' : ''}>
+          Счетчик на объекте отсутствует
+        </label>`;
+        noMeterDiv.querySelector('input').addEventListener('change', (e) => {
+          state.noOldMeter = e.target.checked;
+          saveDraft(); renderChecklist(); validateForm();
+        });
+        item.appendChild(noMeterDiv);
+      }
+
+      const disabledAttr = (state.noOldMeter && isOldMeterCfg) ? 'disabled' : '';
+
+      if (cfg.hasOldModelInput) {
+        const inputDiv = document.createElement('div'); inputDiv.style.display = 'flex'; inputDiv.style.gap = '8px'; inputDiv.style.marginBottom = '8px';
+        
+        let currentModel = state.oldMeterModel;
+        const isKnownModel = allOldMeterModels.includes(currentModel);
+
+        let inputClass = (state.noOldMeter) ? 'neutral-border' : (currentModel ? 'valid' : '');
+        let btnText = isKnownModel ? currentModel : 'Выбрать...';
+
+        // ИСПРАВЛЕНИЕ: Заменили тег <select> на кнопку, вызывающую полноэкранный поиск, при этом сохранив точный внешний вид и поле слева
+        inputDiv.innerHTML = `<input type="text" placeholder="Модель" value="${currentModel}" class="${inputClass}" style="flex-grow: 1; padding: 8px 12px; border-radius: 10px; font-size: 0.9rem;" ${disabledAttr}>
+          <button type="button" class="model-select-btn ${inputClass}" style="flex-shrink: 0; width: 140px; padding: 8px; border-radius: 10px; font-size: 0.85rem; background-color: #f8fafc; color: #334155; border: 1px solid #cbd5e1; box-shadow: none; display: flex; justify-content: space-between; align-items: center;" ${disabledAttr}>
+            <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${btnText}</span>
+            <span>▾</span>
+          </button>`;
+        
+        const inputField = inputDiv.querySelector('input'); 
+        const btnField = inputDiv.querySelector('.model-select-btn');
+        
+        inputField.addEventListener('input', (e) => { 
+          let val = e.target.value.trim(); state.oldMeterModel = val;
+          inputField.classList.toggle('valid', val !== ''); 
+          if (allOldMeterModels.includes(val)) { 
+              btnField.querySelector('span').innerText = val; 
+          } else { 
+              btnField.querySelector('span').innerText = 'Выбрать...'; 
+          }
+          btnField.classList.toggle('valid', val !== ''); 
+          saveDraft(); validateForm(); 
+        });
+        
+        btnField.addEventListener('click', () => { 
+            openModelSearchModal((val) => { 
+                inputField.value = val; state.oldMeterModel = val;
+                inputField.classList.add('valid'); btnField.classList.add('valid'); 
+                btnField.querySelector('span').innerText = val;
+                saveDraft(); validateForm(); 
+            }); 
+        });
+        item.appendChild(inputDiv);
+      }
+
+      if (cfg.hasOldSerialAndReadings) {
+        let inputClassS = state.noOldMeter ? 'neutral-border' : (state.oldMeterSerial ? 'valid' : '');
+        let inputClassR = state.noOldMeter ? 'neutral-border' : (state.oldMeterReadings ? 'valid' : '');
+
+        const inputDiv = document.createElement('div');
+        inputDiv.innerHTML = `<input type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Заводской №" value="${state.oldMeterSerial}" class="${inputClassS}" style="width: 100%; padding: 8px 12px; margin-bottom: 8px; border-radius: 10px; font-size: 0.9rem;" ${disabledAttr}>
+          <input type="text" inputmode="decimal" placeholder="Показания" value="${state.oldMeterReadings}" class="${inputClassR}" style="width: 100%; padding: 8px 12px; margin-bottom: 8px; border-radius: 10px; font-size: 0.9rem;" ${disabledAttr}>`;
+        
+        const inputs = inputDiv.querySelectorAll('input');
+        inputs[0].addEventListener('input', (e) => { 
+          state.oldMeterSerial=e.target.value.trim(); e.target.classList.toggle('valid', state.oldMeterSerial !== ''); saveDraft(); validateForm(); 
+        });
+        inputs[1].addEventListener('input', (e) => { 
+          state.oldMeterReadings=e.target.value.trim(); e.target.classList.toggle('valid', state.oldMeterReadings !== ''); saveDraft(); validateForm(); 
+        });
+        item.appendChild(inputDiv);
+      }
+
+      if (cfg.hasInput && isOldMeterCfg) { 
+        let inputClass = state.noOldMeter ? 'neutral-border' : (state.controllerSeal ? 'valid' : '');
+
+        const inputDiv = document.createElement('div'); 
+        inputDiv.style.display = 'flex'; inputDiv.style.gap = '8px'; inputDiv.style.marginBottom = '8px';
+        inputDiv.innerHTML = `<input type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Введите номер пломбы" value="${state.controllerSeal}" class="${inputClass}" style="flex-grow: 1; padding: 8px 12px; border-radius: 10px; font-size: 0.9rem;" ${disabledAttr}>
+          <label style="display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.9rem; flex-shrink: 0; background: #f1f5f9; padding: 0 12px; border-radius: 10px; border: 1px solid #cbd5e1; cursor:pointer;">
+            <input type="checkbox" style="width: 18px; height: 18px; margin: 0; accent-color: #2b7a4b;" ${disabledAttr}> Нет
+          </label>`;
+        
+        const inputField = inputDiv.querySelector('input[type="text"]'); const checkbox = inputDiv.querySelector('input[type="checkbox"]');
+        if (state.controllerSeal === "Нет") { checkbox.checked = true; }
+        
+        inputField.addEventListener('input', (e) => { 
+          state.controllerSeal=e.target.value.trim();
+          if(state.controllerSeal !== "Нет") checkbox.checked = false; 
+          inputField.classList.toggle('valid', state.controllerSeal !== ''); saveDraft(); validateForm(); 
+        });
+        checkbox.addEventListener('change', (e) => { 
+          state.controllerSeal = e.target.checked ? "Нет" : ""; inputField.value = state.controllerSeal;
+          inputField.classList.toggle('valid', state.controllerSeal !== ''); saveDraft(); validateForm(); 
+        });
+        item.appendChild(inputDiv);
+      }
+
+      if (cfg.hasSerialInput && !isOldMeterCfg) {
+        const inputDiv = document.createElement('div'); inputDiv.style.display = 'flex'; inputDiv.style.gap = '8px'; inputDiv.style.marginBottom = '8px';
+        inputDiv.innerHTML = `<input type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Заводской №" value="${state.serialNumber || ''}" class="${state.serialNumber ? 'valid' : ''}" style="flex-grow: 1; padding: 8px 12px; border-radius: 10px; font-size: 0.9rem;">
+          <button class="scan-btn" type="button" aria-label="Сканировать" style="flex-shrink: 0; width: 42px; height: 42px; border-radius: 10px; margin: 0; padding: 0;">📷</button>`;
+        const inputField = inputDiv.querySelector('input');
+        inputField.addEventListener('input', (e) => { state.serialNumber = e.target.value.trim(); e.target.classList.toggle('valid', state.serialNumber !== ''); saveDraft(); validateForm(); });
+        inputDiv.querySelector('.scan-btn').addEventListener('click', () => { 
+          startWebScanner((resultText) => { 
+            let parsedText = resultText.split(';')[0]; 
+            inputField.value = parsedText; 
+            state.serialNumber = parsedText; 
+            inputField.classList.add('valid'); 
+            saveDraft(); 
+            validateForm(); 
+          }); 
+        });
+        item.appendChild(inputDiv);
+      }
+
+      if (cfg.hasDirectionInput && !isOldMeterCfg) {
+        const inputDiv = document.createElement('div'); inputDiv.className = `radio-wrapper ${state.newGasDirection ? 'valid' : ''}`; inputDiv.style.marginBottom = '8px';
+        inputDiv.innerHTML = `<div class="radio-grid">
+            <label class="radio-card"><input type="radio" name="newGasDir" value="сверху-вниз" ${state.newGasDirection==='сверху-вниз'?'checked':''}> ⬇️</label> <label class="radio-card"><input type="radio" name="newGasDir" value="снизу-вверх" ${state.newGasDirection==='снизу-вверх'?'checked':''}> ⬆️</label> <label class="radio-card"><input type="radio" name="newGasDir" value="справа-налево" ${state.newGasDirection==='справа-налево'?'checked':''}> ⬅️</label> <label class="radio-card"><input type="radio" name="newGasDir" value="слева-направо" ${state.newGasDirection==='слева-направо'?'checked':''}> ➡️</label>
+          </div>`;
+        inputDiv.querySelectorAll('input[type="radio"]').forEach(radio => { radio.addEventListener('change', (e) => { state.newGasDirection = e.target.value; inputDiv.classList.add('valid'); saveDraft(); validateForm(); }); });
+        item.appendChild(inputDiv);
+      }
+
+      if (cfg.hasSimInput) {
+        const inputDiv = document.createElement('div'); inputDiv.style.display = 'flex'; inputDiv.style.gap = '8px'; inputDiv.style.marginBottom = '8px';
+        inputDiv.innerHTML = `<input type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Введите № SIM-карты" value="${state.simCardNumber || ''}" class="${state.simCardNumber ? 'valid' : ''}" style="flex-grow: 1; padding: 8px 12px; border-radius: 10px; font-size: 0.9rem;">
+          <button class="scan-btn" type="button" aria-label="Сканировать" style="flex-shrink: 0; width: 42px; height: 42px; border-radius: 10px; margin: 0; padding: 0;">📷</button>`;
+        const inputField = inputDiv.querySelector('input');
+        inputField.addEventListener('input', (e) => { state.simCardNumber = e.target.value.trim(); e.target.classList.toggle('valid', state.simCardNumber !== ''); saveDraft(); validateForm(); });
+        inputDiv.querySelector('.scan-btn').addEventListener('click', () => { startWebScanner((resultText) => { inputField.value = resultText; state.simCardNumber = resultText; inputField.classList.add('valid'); saveDraft(); validateForm(); }); });
+        item.appendChild(inputDiv);
+      }
+
+      const mediaRow = document.createElement('div'); mediaRow.className = 'media-row';
+      const pArray = state.photos[idx];
+      
+      let btnClasses = 'add-photo-placeholder';
+      if (pArray && pArray.length > 0) {
+          btnClasses += ' has-photos';
+      } else if (!isMandatory || (state.noOldMeter && isOldMeterCfg && idx !== 2)) {
+          btnClasses += ' optional';
+      }
+      
+      const placeholder = document.createElement('div'); 
+      placeholder.className = btnClasses;
+      placeholder.innerHTML = `<span>➕</span>Добавить`; 
+      if (state.noOldMeter && isOldMeterCfg && idx !== 2) {
+          placeholder.style.opacity = '0.5';
+          placeholder.style.pointerEvents = 'none';
+      } else {
+          placeholder.onclick = () => { state.currentActiveIndex = idx; state.currentActiveMeter = 1; globalFileInput.click(); }; 
+      }
+      mediaRow.appendChild(placeholder);
+      
+      if (pArray) {
+          pArray.forEach((pData, pIdx) => {
+            const pContainer = document.createElement('div'); pContainer.className = 'photo-container';
+            const img = document.createElement('img'); img.src = pData.dataUrl; img.className = 'thumbnail'; img.onclick = (e) => { e.stopPropagation(); openLightbox(pData.dataUrl); };
+            const delBtn = document.createElement('button'); delBtn.className = 'delete-btn'; delBtn.innerHTML = '&times;'; delBtn.onclick = (e) => { e.stopPropagation(); removePhoto(idx, pIdx, 1); };
+            pContainer.appendChild(img); pContainer.appendChild(delBtn); mediaRow.appendChild(pContainer);
+          });
+      }
+      item.appendChild(mediaRow); 
+
+      // Распределяем элементы по нужным карточкам
+      let targetGrid;
+      if (idx === 0 || idx === 1) targetGrid = group1.querySelector('.photo-grid');
+      else if (idx >= 2 && idx <= 6) targetGrid = group2.querySelector('.photo-grid');
+      else targetGrid = group3.querySelector('.photo-grid');
+      
+      targetGrid.appendChild(item);
+
+    });
+    validateForm();
+  }
+
+  globalFileInput.addEventListener('change', (e) => {
+    const files = Array.from(e.target.files), idx = state.currentActiveIndex, m = state.currentActiveMeter || 1; 
+    if (files.length === 0 || idx === null) return;
+    let processedCount = 0;
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas'); let width = img.width, height = img.height;
+          const MAX_SIDE = 1280; 
+          if (width > MAX_SIDE || height > MAX_SIDE) { if (width > height) { height *= MAX_SIDE / width; width = MAX_SIDE; } else { width *= MAX_SIDE / height; height = MAX_SIDE; } }
+          canvas.width = width; canvas.height = height; canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.7); 
+          if (m === 1) state.photos[idx].push({ dataUrl: dataUrl, timestamp: new Date().toISOString() }); 
+          else if (m === 2) state.photos2[idx].push({ dataUrl: dataUrl, timestamp: new Date().toISOString() }); 
+          else if (m === 3) state.photos3[idx].push({ dataUrl: dataUrl, timestamp: new Date().toISOString() }); 
+          processedCount++; 
+          if (processedCount === files.length) { saveDraft(); renderChecklist(); }
+        }; img.src = event.target.result;
+      }; reader.readAsDataURL(file);
+    }); globalFileInput.value = '';
+  });
+
+  function removePhoto(configIdx, photoIdx, m = 1) { 
+      if (m === 1) state.photos[configIdx].splice(photoIdx, 1); 
+      else if (m === 2) state.photos2[configIdx].splice(photoIdx, 1); 
+      else if (m === 3) state.photos3[configIdx].splice(photoIdx, 1); 
+      renderChecklist(); 
+      saveDraft(); validateForm(); 
+  }
+  
+  function validateForm() { 
+    const allPhotosExist = mandatoryConfig.every((cfg, i) => {
+        const isOldMeterCfg = [2, 3, 4, 5, 6].includes(i);
+        if (state.noOldMeter && isOldMeterCfg) return true;
+        if (cfg.conditionalMandatory && state.uirgLocation !== 'Улица') return true;
+        
+        if (isOldMeterCfg) {
+            return state.photos[i].length > 0;
+        } else {
+            return state.photos[i].length > 0;
+        }
+    });
+
+    let m1 = true, m2 = true, m3 = true, m4 = true;
+    if (!state.noOldMeter) {
+        m1 = state.oldMeterModel !== ''; m2 = state.oldMeterSerial !== ''; m3 = state.oldMeterReadings !== ''; m4 = state.controllerSeal !== ''; 
+    }
+
+    const m5 = state.serialNumber !== ''; const m6 = state.newGasDirection !== ''; const m7 = state.simCardNumber !== '';
+    generateBtn.disabled = !(allPhotosExist && m1 && m2 && m3 && m4 && m5 && m6 && m7); 
+  }
+
+  function buildEmailBodyText() {
+    const gps = (state.coordinates && !state.coordinates.error) ? `${state.coordinates.lat.toFixed(6)}, ${state.coordinates.lng.toFixed(6)}` : 'Не определены';
+    const datetime = formatDateTime(state.creationDate); 
+    
+    let oldMeterText = "";
+    for(let m=1; m<=state.oldMeterCount; m++) {
+        let oM = m===1 ? state.oldMeterModel : (m===2 ? state.oldMeterModel2 : state.oldMeterModel3);
+        let oS = m===1 ? state.oldMeterSerial : (m===2 ? state.oldMeterSerial2 : state.oldMeterSerial3);
+        let oR = m===1 ? state.oldMeterReadings : (m===2 ? state.oldMeterReadings2 : state.oldMeterReadings3);
+        let cS = m===1 ? state.controllerSeal : (m===2 ? state.controllerSeal2 : state.controllerSeal3);
+        
+        let fm = state.noOldMeter ? 'Нет счетчика' : (oM || 'нет');
+        let fs = state.noOldMeter ? 'Нет счетчика' : (oS || 'нет');
+        let fr = state.noOldMeter ? 'Нет счетчика' : (oR || 'нет');
+        let fc = state.noOldMeter ? 'Нет счетчика' : (cS || 'Нет');
+        
+        let prefix = state.oldMeterCount > 1 ? `[Старый счетчик №${m}]\n` : "";
+        oldMeterText += `${prefix}• Модель старого: ${fm}\n• № старого: ${fs}\n• Показания старого: ${fr}\n• Пломба: ${fc}\n`;
+        if (m < state.oldMeterCount) oldMeterText += "--------------------\n";
+    }
+
+    let text = `• Город: ${state.cityName || 'не указан'}\n• Адрес: ${state.address}\n• Расположение: ${state.uirgLocation || 'не указано'}\n• GPS: ${gps}\n• Потребитель: ${state.consumerName}\n• ЛС: ${state.accountNumber}\n--------------------\n${oldMeterText}--------------------\n• Модель нового: ${state.meterModel}\n• № нового: ${state.serialNumber}\n• Направление: ${state.newGasDirection || 'нет'}\n• SIM: ${state.simCardNumber || 'нет'}\n--------------------\n• Комментарий: ${state.comment || 'нет'}\n--------------------\n• Монтажник: ${state.installerName}\n• ${datetime}`;
+    return text;
+  }
+
+  generateBtn.addEventListener('click', async () => {
+    generateBtn.innerText = "⏳ Сборка архива..."; generateBtn.disabled = true;
+    const emailBodyText = buildEmailBodyText();
+    try {
+      const filesToPack = [];
+      
+      mandatoryConfig.forEach((cfg, idx) => {
+        const isOldMeterCfg = [2, 3, 4, 5, 6].includes(idx);
+        state.photos[idx].forEach((pData, pIdx) => { 
+            let pName = state.photos[idx].length === 1 ? `${cfg.prefix}.jpg` : `${cfg.prefix}_${pIdx + 1}.jpg`;
+            if (isOldMeterCfg && state.oldMeterCount > 1) pName = `${cfg.prefix}_m1_${pIdx + 1}.jpg`;
+            filesToPack.push({ name: pName, blob: dataURItoUint8Array(pData.dataUrl) }); 
+        });
+
+        if (isOldMeterCfg && state.oldMeterCount >= 2) {
+            state.photos2[idx].forEach((pData, pIdx) => { 
+                filesToPack.push({ name: `${cfg.prefix}_m2_${pIdx + 1}.jpg`, blob: dataURItoUint8Array(pData.dataUrl) }); 
+            });
+        }
+        if (isOldMeterCfg && state.oldMeterCount >= 3) {
+            state.photos3[idx].forEach((pData, pIdx) => { 
+                filesToPack.push({ name: `${cfg.prefix}_m3_${pIdx + 1}.jpg`, blob: dataURItoUint8Array(pData.dataUrl) }); 
+            });
+        }
+      });
+      
+      filesToPack.unshift({ name: 'report_info.txt', blob: new TextEncoder().encode(emailBodyText) });
+      if (state.signatureDataUrl) { filesToPack.push({ name: 'signature.png', blob: dataURItoUint8Array(state.signatureDataUrl) }); }
+
+      let fileData = [], centralDir = [], offset = 0; const encoder = new TextEncoder();
+      for (let i = 0; i < filesToPack.length; i++) {
+        const file = filesToPack[i]; generateBtn.innerText = `⏳ Упаковка: ${i + 1}/${filesToPack.length}...`; await new Promise(r => setTimeout(r, 10));
+        const nameBytes = encoder.encode(file.name); const bodyBytes = file.blob;
+        let crc = 0xFFFFFFFF; for (let b = 0; b < bodyBytes.length; b++) { crc ^= bodyBytes[b]; for (let j = 0; j < 8; j++) crc = (crc >>> 1) ^ (crc & 1 ? 0xEDB88320 : 0); } crc ^= 0xFFFFFFFF;
+        const lfh = new Uint8Array(30 + nameBytes.length); lfh.set([0x50, 0x4B, 0x03, 0x04, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, crc & 0xFF, (crc >>> 8) & 0xFF, (crc >>> 16) & 0xFF, (crc >>> 24) & 0xFF, bodyBytes.length & 0xFF, (bodyBytes.length >>> 8) & 0xFF, (bodyBytes.length >>> 16) & 0xFF, (bodyBytes.length >>> 24) & 0xFF, bodyBytes.length & 0xFF, (bodyBytes.length >>> 8) & 0xFF, (bodyBytes.length >>> 16) & 0xFF, (bodyBytes.length >>> 24) & 0xFF, nameBytes.length & 0xFF, (nameBytes.length >>> 8) & 0xFF, 0, 0]); lfh.set(nameBytes, 30); fileData.push(lfh, bodyBytes);
+        const cdh = new Uint8Array(46 + nameBytes.length); cdh.set([0x50, 0x4B, 0x01, 0x02, 20, 0, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, crc & 0xFF, (crc >>> 8) & 0xFF, (crc >>> 16) & 0xFF, (crc >>> 24) & 0xFF, bodyBytes.length & 0xFF, (bodyBytes.length >>> 8) & 0xFF, (bodyBytes.length >>> 16) & 0xFF, (bodyBytes.length >>> 24) & 0xFF, bodyBytes.length & 0xFF, (bodyBytes.length >>> 8) & 0xFF, (bodyBytes.length >>> 16) & 0xFF, (bodyBytes.length >>> 24) & 0xFF, nameBytes.length & 0xFF, (nameBytes.length >>> 8) & 0xFF, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, offset & 0xFF, (offset >>> 8) & 0xFF, (offset >>> 16) & 0xFF, (offset >>> 24) & 0xFF]); cdh.set(nameBytes, 46); centralDir.push(cdh); offset += lfh.length + bodyBytes.length;
+      }
+      let cdLen = centralDir.reduce((a, b) => a + b.length, 0); const eocd = new Uint8Array(22); eocd.set([0x50, 0x4B, 0x05, 0x06, 0, 0, 0, 0, filesToPack.length & 0xFF, (filesToPack.length >>> 8) & 0xFF, filesToPack.length & 0xFF, (filesToPack.length >>> 8) & 0xFF, cdLen & 0xFF, (cdLen >>> 8) & 0xFF, (cdLen >>> 16) & 0xFF, (cdLen >>> 24) & 0xFF, offset & 0xFF, (offset >>> 8) & 0xFF, (offset >>> 16) & 0xFF, (offset >>> 24) & 0xFF, 0, 0]);
+      const finalZipUint8 = new Uint8Array(offset + cdLen + 22); let currentPos = 0; fileData.forEach(part => { finalZipUint8.set(part, currentPos); currentPos += part.length; }); centralDir.forEach(part => { finalZipUint8.set(part, currentPos); currentPos += part.length; }); finalZipUint8.set(eocd, currentPos);
+      
+      const d = new Date(state.creationDate); const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      let sanitizedSerial = state.serialNumber.replace(/[^a-zа-яё0-9]/gi, '_').substring(0, 24);
+      currentZipName = `${sanitizedSerial}_${dateStr}.zip`;
+
+      const fbReportData = { 
+        city: state.cityName || "",
+        address: state.address || "", 
+        uirgLocation: state.uirgLocation || "", 
+        installer: state.installerName || "", 
+        serial: state.serialNumber || "", 
+        model: state.meterModel || "", 
+        consumer: state.consumerName || "", 
+        ls: state.accountNumber || "", 
+        
+        oldMeterCount: state.oldMeterCount,
+        oldMeterModel: state.noOldMeter ? "Нет счетчика" : (state.oldMeterModel || ""), 
+        oldMeterSerial: state.noOldMeter ? "Нет счетчика" : (state.oldMeterSerial || ""), 
+        oldMeterReadings: state.noOldMeter ? "Нет счетчика" : (state.oldMeterReadings || ""), 
+        controllerSeal: state.noOldMeter ? "Нет счетчика" : (state.controllerSeal || ""), 
+        
+        oldMeterModel2: (state.noOldMeter || state.oldMeterCount < 2) ? "Нет счетчика" : (state.oldMeterModel2 || ""), 
+        oldMeterSerial2: (state.noOldMeter || state.oldMeterCount < 2) ? "Нет счетчика" : (state.oldMeterSerial2 || ""), 
+        oldMeterReadings2: (state.noOldMeter || state.oldMeterCount < 2) ? "Нет счетчика" : (state.oldMeterReadings2 || ""), 
+        controllerSeal2: (state.noOldMeter || state.oldMeterCount < 2) ? "Нет счетчика" : (state.controllerSeal2 || ""), 
+        
+        oldMeterModel3: (state.noOldMeter || state.oldMeterCount < 3) ? "Нет счетчика" : (state.oldMeterModel3 || ""), 
+        oldMeterSerial3: (state.noOldMeter || state.oldMeterCount < 3) ? "Нет счетчика" : (state.oldMeterSerial3 || ""), 
+        oldMeterReadings3: (state.noOldMeter || state.oldMeterCount < 3) ? "Нет счетчика" : (state.oldMeterReadings3 || ""), 
+        controllerSeal3: (state.noOldMeter || state.oldMeterCount < 3) ? "Нет счетчика" : (state.controllerSeal3 || ""), 
+
+        newGasDirection: state.newGasDirection || "", 
+        simCardNumber: state.simCardNumber || "", 
+        comment: state.comment || "",
+        gps: (state.coordinates && !state.coordinates.error) ? `${state.coordinates.lat.toFixed(6)}, ${state.coordinates.lng.toFixed(6)}` : 'Нет', 
+        date: formatDateTime(state.creationDate), 
+        timestamp: Date.now() 
+      };
+
+      function pushToFirebase(data) { if (fbDb && navigator.onLine) { fbDb.ref('bot_installations').push(data).catch(() => saveToPendingSync(data)); } else { saveToPendingSync(data); } }
+      function saveToPendingSync(data) { if (!db) return; db.transaction("pending_sync", "readwrite").objectStore("pending_sync").add({ data: data }); }
+      
+      pushToFirebase(fbReportData);
+
+      // ЖЕЛЕЗОБЕТОННОЕ СОХРАНЕНИЕ
+      const base64Data = uint8ToBase64(finalZipUint8);
+      if (db) {
+        const tx = db.transaction("archives", "readwrite");
+        
+        // Успех фиксируется только после того, как база точно записала данные
+        tx.oncomplete = function() {
+          clearDraft();
+          generateBtn.innerText = "✓ Архив сохранен!";
+          savedFileNameSpan.innerText = currentZipName;
+          manualSendInstructions.classList.remove('hidden');
+          shareTextBtn.classList.remove('hidden');
         };
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-        const dbRef = database.ref('bot_installations');
 
-        let dbList = [];
+        // Если памяти не хватило или система оборвала процесс
+        tx.onerror = function(err) {
+          alert("Сбой записи в память. Проверьте свободное место на телефоне.");
+          resetGenBtn();
+        };
+        tx.onabort = function(err) {
+          alert("Сохранение прервано системой iOS.");
+          resetGenBtn();
+        };
 
-        function closeModal(id) {
-            document.getElementById(id).classList.remove('active');
-        }
-        function openModal(id) {
-            document.getElementById(id).classList.add('active');
-        }
-
-        document.querySelectorAll('.modal-overlay').forEach(el => {
-            el.addEventListener('click', (e) => {
-                if (e.target === el) closeModal(el.id);
-            });
+        tx.objectStore("archives").put({ 
+          name: currentZipName, 
+          base64: base64Data, 
+          text: emailBodyText, 
+          date: new Date().toISOString() 
         });
+      } else {
+        alert("Локальная память браузера недоступна.");
+        resetGenBtn();
+      }
+    } catch (err) { alert("Сбой сборки: " + err.message); resetGenBtn(); }
+  });
 
-        function parseDateFromString(str) {
-            if (!str) return null;
-            const parts = str.split(',');
-            if (parts.length < 2) return null;
-            const datePart = parts[0].trim().split('.');
-            const timePart = parts[1].trim().split(':');
-            if (datePart.length !== 3 || timePart.length !== 2) return null;
-            const day = parseInt(datePart[0]);
-            const month = parseInt(datePart[1]) - 1;
-            const year = parseInt(datePart[2]);
-            const hour = parseInt(timePart[0]);
-            const minute = parseInt(timePart[1]);
-            return new Date(year, month, day, hour, minute);
+  function resetGenBtn() { generateBtn.innerText = "Сформировать архив"; generateBtn.disabled = false; }
+
+  shareTextBtn.addEventListener('click', () => {
+    // Вытаскиваем файл напрямую из базы
+    const req = db.transaction("archives", "readonly").objectStore("archives").get(currentZipName);
+    req.onsuccess = (e) => {
+       const result = e.target.result;
+       if (result) { shareFiles([result], `Счетчик № ${state.serialNumber}`); }
+       else { alert("Файл не найден в базе."); }
+    };
+  });
+
+  document.getElementById('startReportBtn').addEventListener('click', () => {
+    state.cityName = document.getElementById('cityName').value || '';
+    state.address = document.getElementById('address').value.trim(); const uirgNode = document.querySelector('input[name="uirg"]:checked'); state.uirgLocation = uirgNode ? uirgNode.value : ''; state.installerName = document.getElementById('installerName').value.trim(); state.meterModel = document.getElementById('meterModel').value.trim(); state.consumerName = document.getElementById('consumerName').value.trim(); state.accountNumber = document.getElementById('accountNumber').value.trim();
+    if (!state.cityName || !state.address || !state.uirgLocation || !state.installerName || !state.meterModel || !state.consumerName || !state.accountNumber) { alert("Заполните ВСЕ обязательные поля, выделенные красной рамкой!"); updateMainValidation(); return; }
+    if (!state.signatureDataUrl) { alert("Потребитель должен поставить подпись!"); return; }
+    
+    localStorage.setItem('installerName', state.installerName);
+    formScreen.classList.add('hidden'); checklistScreen.classList.remove('hidden');
+    if (!navigator.onLine) syncStatus.classList.remove('hidden');
+    state.creationDate = new Date().toISOString(); startActiveGeoSearch(); saveDraft(); renderChecklist();
+  });
+
+  // Отложенные отчеты: перехватываем функцию сброса
+  function performReset() {
+    state.photos.forEach(arr => { arr.forEach(p => URL.revokeObjectURL(p.previewUrl)); });
+    state.photos2.forEach(arr => { arr.forEach(p => URL.revokeObjectURL(p.previewUrl)); });
+    state.photos3.forEach(arr => { arr.forEach(p => URL.revokeObjectURL(p.previewUrl)); });
+    if (watchId !== null) { navigator.geolocation.clearWatch(watchId); watchId = null; } if (gpsTimeoutId !== null) { clearTimeout(gpsTimeoutId); gpsTimeoutId = null; }
+    state = { cityName: '', address: '', uirgLocation: '', installerName: localStorage.getItem('installerName') || '', serialNumber: '', meterModel: '', consumerName: '', accountNumber: '', signatureDataUrl: '', controllerSeal: '', oldMeterCount: 1, oldMeterModel: '', oldMeterSerial: '', oldMeterReadings: '', oldMeterModel2: '', oldMeterSerial2: '', oldMeterReadings2: '', controllerSeal2: '', oldMeterModel3: '', oldMeterSerial3: '', oldMeterReadings3: '', controllerSeal3: '', newGasDirection: '', simCardNumber: '', noOldMeter: false, comment: '', coordinates: null, creationDate: null, gpsLocked: false, photos: Array.from({ length: mandatoryConfig.length }, () => []), photos2: Array.from({ length: mandatoryConfig.length }, () => []), photos3: Array.from({ length: mandatoryConfig.length }, () => []), currentActiveIndex: null, currentActiveMeter: 1 };
+    currentZipName = "";
+    document.getElementById('cityName').value = ''; document.getElementById('address').value = ''; document.getElementById('meterModel').value = ''; document.getElementById('consumerName').value = ''; document.getElementById('accountNumber').value = ''; document.getElementById('noAccountCb').checked = false; document.getElementById('reportComment').value = '';
+    document.querySelectorAll('input[name="uirg"]').forEach(r => r.checked = false);
+    sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+    clearDraft(); updateMainValidation();
+    manualSendInstructions.classList.add('hidden'); shareTextBtn.classList.add('hidden'); resetGenBtn(); checklistScreen.classList.add('hidden'); formScreen.classList.remove('hidden');
+  }
+
+  // Логика кнопки НАЗАД
+  document.getElementById('goBackBtn').addEventListener('click', () => {
+    checklistScreen.classList.add('hidden');
+    formScreen.classList.remove('hidden');
+  });
+
+  // Отложить отчет
+  document.getElementById('postponeReportBtn').addEventListener('click', () => {
+    if(!confirm('Отложить этот отчет? Вы сможете вернуться к нему позже на главном экране.')) return;
+    const postponedId = "postponed_" + Date.now();
+    const draftState = { ...state };
+    
+    if (db) {
+        const tx = db.transaction("drafts", "readwrite");
+        tx.objectStore("drafts").put({ id: postponedId, data: draftState });
+        tx.objectStore("drafts").delete("current");
+        tx.oncomplete = () => { performReset(); updatePostponedCount(); };
+    }
+  });
+
+  // Открытие отложенных отчетов
+  document.getElementById('openPostponedBtn').addEventListener('click', () => {
+    formScreen.classList.add('hidden');
+    document.getElementById('postponedScreen').classList.remove('hidden');
+    loadPostponedList();
+  });
+
+  // Возврат из отложенных отчетов
+  document.getElementById('backFromPostponedBtn').addEventListener('click', () => {
+    document.getElementById('postponedScreen').classList.add('hidden');
+    formScreen.classList.remove('hidden');
+  });
+
+  function loadPostponedList() {
+    const container = document.getElementById('postponedListContainer');
+    container.innerHTML = '<div style="text-align:center; padding: 20px; color: #64748b;">Загрузка...</div>';
+    if (!db) return;
+    
+    const req = db.transaction("drafts", "readonly").objectStore("drafts").getAll();
+    req.onsuccess = (e) => {
+        const drafts = e.target.result.filter(d => d.id.toString().startsWith("postponed_"));
+        container.innerHTML = '';
+        
+        if(drafts.length === 0) {
+            container.innerHTML = '<div style="text-align:center; padding: 20px; color: #64748b;">Нет отложенных отчетов</div>';
+            return;
         }
-
-        function extractMeterSize(model) {
-            if (!model) return '—';
-            const match = model.match(/G(\d{1,2})/i);
-            if (match) {
-                return 'G' + match[1];
-            }
-            return model.substring(0, 10);
-        }
-
-        function renderStats() {
-            const grid = document.getElementById('statsGrid');
-            const totalFiltered = dbList.length;
-
-            const now = new Date();
-            const todayStart = new Date(now);
-            todayStart.setHours(7, 0, 0, 0);
-            const todayEnd = new Date(now);
-            todayEnd.setHours(23, 59, 59, 999);
-            let todayCount = 0;
-            dbList.forEach(item => {
-                const d = parseDateFromString(item.date);
-                if (d && d >= todayStart && d <= todayEnd) todayCount++;
+        
+        drafts.sort((a,b) => new Date(b.data.creationDate) - new Date(a.data.creationDate));
+        
+        drafts.forEach(draft => {
+            const item = document.createElement('div');
+            item.className = 'archive-item';
+            item.style.cursor = 'pointer';
+            
+            const dDate = new Date(draft.data.creationDate).toLocaleString('ru-RU', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
+            const addr = draft.data.address || 'Адрес не указан';
+            
+            item.innerHTML = `<div class="archive-info">
+                <div class="archive-name">${addr}</div>
+                <div style="font-size: 0.75rem; color: #2b7a4b; margin-top: 4px;">🕒 Отложен: ${dDate}</div>
+            </div>
+            <button class="danger-btn" style="width: 40px; height: 40px; padding:0; flex-shrink:0; border-radius:10px;" title="Удалить">❌</button>`;
+            
+            item.addEventListener('click', (ev) => {
+                if(ev.target.tagName === 'BUTTON' || ev.target.innerText === '❌') return;
+                resumePostponed(draft.id);
             });
-
-            let totalPower = 0;
-            dbList.forEach(item => {
-                if (item.totalPower) {
-                    const val = parseFloat(item.totalPower.replace(',', '.'));
-                    if (!isNaN(val)) totalPower += val;
+            
+            item.querySelector('button').addEventListener('click', (ev) => {
+                ev.stopPropagation();
+                if(confirm('Точно удалить этот отложенный отчет навсегда?')) {
+                    db.transaction("drafts", "readwrite").objectStore("drafts").delete(draft.id).onsuccess = () => {
+                        loadPostponedList(); updatePostponedCount();
+                    };
                 }
             });
-
-            const sizeCount = {};
-            dbList.forEach(item => {
-                if (item.model) {
-                    const size = extractMeterSize(item.model);
-                    if (size && size !== '—') {
-                        sizeCount[size] = (sizeCount[size] || 0) + 1;
-                    }
-                }
-            });
-            const sortedSizes = Object.entries(sizeCount).sort((a, b) => {
-                const numA = parseInt(a[0].replace('G', ''));
-                const numB = parseInt(b[0].replace('G', ''));
-                return numA - numB;
-            });
-
-            let sizesHtml = '';
-            if (sortedSizes.length === 0) {
-                sizesHtml = '<div style="color:var(--text-muted); font-size:0.85rem;">Нет данных</div>';
-            } else {
-                sizesHtml = '<div class="model-list">';
-                sortedSizes.forEach(([size, count]) => {
-                    sizesHtml += `
-                        <div class="model-item">
-                            <span class="model-name" title="${size}">${size}</span>
-                            <span class="model-count">${count}</span>
-                        </div>
-                    `;
-                });
-                sizesHtml += '</div>';
-            }
-
-            grid.innerHTML = `
-                <div class="stat-card accent-cyan">
-                    <div class="icon">📊</div>
-                    <div class="number">${totalFiltered}</div>
-                    <div class="label">Всего установок</div>
-                    <div class="sub">в базе</div>
-                </div>
-                <div class="stat-card accent-green clickable" onclick="showTodayDetails()" title="Нажмите для деталей">
-                    <div class="icon">📅</div>
-                    <div class="number">${todayCount}</div>
-                    <div class="label">Сегодня (с 7:00)</div>
-                    <div class="sub">за день</div>
-                </div>
-                <div class="stat-card accent-pink">
-                    <div class="icon">⚡</div>
-                    <div class="number">${totalPower.toFixed(1)}</div>
-                    <div class="label">Суммарная мощность</div>
-                    <div class="sub">м³/ч</div>
-                </div>
-                <div class="stat-card accent-purple" style="grid-column: span 1;">
-                    <div class="icon">📦</div>
-                    <div class="label" style="font-weight:600; margin-bottom:4px;">Типоразмеры</div>
-                    ${sizesHtml}
-                </div>
-            `;
-        }
-
-        function showTodayDetails() {
-            const now = new Date();
-            const todayStart = new Date(now);
-            todayStart.setHours(7, 0, 0, 0);
-            const todayEnd = new Date(now);
-            todayEnd.setHours(23, 59, 59, 999);
-
-            const todayRecords = dbList.filter(item => {
-                const d = parseDateFromString(item.date);
-                return d && d >= todayStart && d <= todayEnd;
-            });
-
-            if (todayRecords.length === 0) {
-                document.getElementById('detailsTitle').innerText = 'Сегодня (с 7:00)';
-                document.getElementById('detailsBody').innerHTML = `<div class="empty-state">За сегодня установок нет</div>`;
-                openModal('detailsModal');
-                return;
-            }
-
-            const byInstaller = {};
-            todayRecords.forEach(r => {
-                const inst = r.installer || 'Неизвестно';
-                if (!byInstaller[inst]) byInstaller[inst] = [];
-                byInstaller[inst].push(r);
-            });
-
-            let html = '';
-            Object.keys(byInstaller).sort().forEach(inst => {
-                html += `<div class="day-group">
-                    <div class="day-title">${inst} (${byInstaller[inst].length} шт.)</div>
-                `;
-                byInstaller[inst].forEach(r => {
-                    const time = r.date && r.date.includes(',') ? r.date.split(',')[1].trim() : '';
-                    html += `
-                        <div class="record-item">
-                            <div class="record-main">
-                                <span class="model">${r.model || '—'}</span>
-                                <span class="serial">№ ${r.serial || '—'}</span>
-                            </div>
-                            <div class="record-meta">
-                                <div class="time">${time}</div>
-                                <div class="object-name">${r.objectName || ''}</div>
-                            </div>
-                        </div>
-                    `;
-                });
-                html += `</div>`;
-            });
-
-            document.getElementById('detailsTitle').innerText = `Сегодня установлено: ${todayRecords.length}`;
-            document.getElementById('detailsBody').innerHTML = html;
-            openModal('detailsModal');
-        }
-
-        function renderSummary() {
-            const tbody = document.getElementById('summaryTableBody');
-            const stats = {};
-            dbList.forEach(item => {
-                const installer = item.installer || 'Неизвестно';
-                if (!stats[installer]) stats[installer] = { count: 0, records: [] };
-                stats[installer].count++;
-                stats[installer].records.push(item);
-            });
-
-            let html = '';
-            const sortedInstallers = Object.keys(stats).sort();
-            if (sortedInstallers.length === 0) {
-                html = `<tr><td colspan="3" style="text-align:center; padding:24px; color:var(--text-muted);">Нет данных</td></tr>`;
-            } else {
-                sortedInstallers.forEach(inst => {
-                    const count = stats[inst].count;
-                    html += `
-                        <tr>
-                            <td><span class="installer-name" title="${inst}">${inst}</span></td>
-                            <td style="text-align:center;"><span class="count-badge">${count}</span></td>
-                            <td style="text-align:right;">
-                                <button class="action-btn" onclick="showInstallerDetails('${inst}')" title="Детализация">
-                                    <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
-                                </button>
-                            </td>
-                        </tr>
-                    `;
-                });
-            }
-            tbody.innerHTML = html;
-        }
-
-        function showInstallerDetails(installer) {
-            const records = dbList.filter(item => item.installer === installer);
-
-            if (records.length === 0) {
-                document.getElementById('detailsTitle').innerText = `Монтажник: ${installer}`;
-                document.getElementById('detailsBody').innerHTML = `<div class="empty-state">Нет записей</div>`;
-                openModal('detailsModal');
-                return;
-            }
-
-            const byDay = {};
-            records.forEach(r => {
-                let day = r.date ? r.date.split(',')[0] : 'Без даты';
-                if (!byDay[day]) byDay[day] = [];
-                byDay[day].push(r);
-            });
-
-            const sortedDays = Object.keys(byDay).sort((a, b) => {
-                const dA = parseDateFromString(a + ', 00:00');
-                const dB = parseDateFromString(b + ', 00:00');
-                if (dA && dB) return dB - dA;
-                return 0;
-            });
-
-            let html = '';
-            sortedDays.forEach(day => {
-                const dayRecords = byDay[day];
-                html += `<div class="day-group">
-                    <div class="day-title">${day} (${dayRecords.length} шт.)</div>
-                `;
-                dayRecords.forEach(r => {
-                    const time = r.date && r.date.includes(',') ? r.date.split(',')[1].trim() : '';
-                    html += `
-                        <div class="record-item">
-                            <div class="record-main">
-                                <span class="model">${r.model || '—'}</span>
-                                <span class="serial">№ ${r.serial || '—'}</span>
-                            </div>
-                            <div class="record-meta">
-                                <div class="time">${time}</div>
-                                <div class="object-name">${r.objectName || ''}</div>
-                            </div>
-                        </div>
-                    `;
-                });
-                html += `</div>`;
-            });
-
-            document.getElementById('detailsTitle').innerText = `Монтажник: ${installer} (${records.length} установок)`;
-            document.getElementById('detailsBody').innerHTML = html;
-            openModal('detailsModal');
-        }
-
-        function renderFullTable() {
-            const tbody = document.getElementById('fullTableBody');
-            let html = '';
-            if (dbList.length === 0) {
-                html = `<tr><td colspan="14" style="text-align:center; padding:24px; color:var(--text-muted);">Нет записей</td></tr>`;
-            } else {
-                dbList.forEach(item => {
-                    html += `<tr>
-                        <td>${item.installer || '-'}</td>
-                        <td>${item.objectName || '-'}</td>
-                        <td>${item.address || '-'}</td>
-                        <td>${item.uirgLocation || '-'}</td>
-                        <td>${item.totalPower || '-'}</td>
-                        <td>${item.model || '-'}</td>
-                        <td>${item.serial || '-'}</td>
-                        <td>${item.controllerSeal || '-'}</td>
-                        <td>${item.oldMeterModel || '-'}</td>
-                        <td>${item.oldMeterSerial || '-'}</td>
-                        <td>${item.oldMeterReadings || '-'}</td>
-                        <td>${item.newGasDirection || '-'}</td>
-                        <td>${item.simCardNumber || '-'}</td>
-                        <td>${item.date || '-'}</td>
-                    </tr>`;
-                });
-            }
-            tbody.innerHTML = html;
-        }
-
-        function exportToExcel() {
-            if (dbList.length === 0) {
-                alert('Нет данных для выгрузки.');
-                return;
-            }
-
-            const headers = [
-                'Монтажник', 'Объект', 'Адрес', 'Расположение',
-                'Мощн. (м³/ч)', 'Модель', '№', 'Пломба',
-                'Ст. модель', 'Ст. №', 'Ст. показ.', 'Направл.',
-                'SIM', 'Дата'
-            ];
-
-            let html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
-            html += '<head><meta charset="utf-8"></head>';
-            html += '<body><table>';
-
-            html += '<tr>';
-            headers.forEach(h => {
-                html += `<th style="background:#f1f5f9;color:#1e293b;font-weight:bold;border:1px solid #cbd5e1;padding:6px 8px;">${h}</th>`;
-            });
-            html += '</tr>';
-
-            dbList.forEach(item => {
-                html += '<tr>';
-                const cells = [
-                    item.installer || '',
-                    item.objectName || '',
-                    item.address || '',
-                    item.uirgLocation || '',
-                    item.totalPower || '',
-                    item.model || '',
-                    item.serial || '',
-                    item.controllerSeal || '',
-                    item.oldMeterModel || '',
-                    item.oldMeterSerial || '',
-                    item.oldMeterReadings || '',
-                    item.newGasDirection || '',
-                    item.simCardNumber || '',
-                    item.date || ''
-                ];
-                cells.forEach(val => {
-                    html += `<td style="border:1px solid #cbd5e1;padding:4px 6px;mso-number-format:'\\@';">${val}</td>`;
-                });
-                html += '</tr>';
-            });
-
-            html += '</table></body></html>';
-
-            const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            const dateStr = new Date().toISOString().slice(0,10);
-            a.href = url;
-            a.download = `Установки_${dateStr}.xls`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
-
-        function renderAll() {
-            renderStats();
-            renderSummary();
-            renderFullTable();
-        }
-
-        firebase.database().ref('.info/connected').on('value', snap => {
-            const dot = document.getElementById('connDot');
-            const text = document.getElementById('connText');
-            if (snap.val() === true) {
-                dot.classList.add('online');
-                text.innerText = 'В сети';
-                text.style.color = '#0284c7';
-            } else {
-                dot.classList.remove('online');
-                text.innerText = 'Офлайн';
-                text.style.color = '#64748b';
-            }
+            container.appendChild(item);
         });
+    }
+  }
 
-        dbRef.on('value', snap => {
-            const data = snap.val();
-            dbList = [];
-            if (data) {
-                for (let key in data) {
-                    dbList.push({ id: key, ...data[key] });
-                }
-            }
-            dbList.sort((a, b) => {
-                const da = parseDateFromString(a.date);
-                const db = parseDateFromString(b.date);
-                if (da && db) return db - da;
-                if (da) return -1;
-                if (db) return 1;
-                return 0;
-            });
-            renderAll();
-        }, err => {
-            console.error('Firebase error:', err);
-            document.getElementById('statsGrid').innerHTML = `
-                <div class="stat-card" style="grid-column:1/-1; text-align:center; color:#db2777;">
-                    <div class="icon">⚠️</div>
-                    <div>Ошибка загрузки данных</div>
-                    <div style="font-size:0.8rem; color:var(--text-muted);">${err.message}</div>
-                </div>
-            `;
-        });
-
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                const target = this.dataset.target;
-                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-                document.getElementById(target).classList.add('active');
-                renderAll();
-            });
-        });
-
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js').then(() => {
-                console.log('SW registered');
-            }).catch(err => {
-                console.warn('SW registration failed:', err);
-            });
+  function resumePostponed(postponedId) {
+    db.transaction("drafts", "readwrite").objectStore("drafts").get(postponedId).onsuccess = (e) => {
+        const result = e.target.result;
+        if(result && result.data) {
+            const tx = db.transaction("drafts", "readwrite");
+            tx.objectStore("drafts").put({ id: "current", data: result.data });
+            tx.objectStore("drafts").delete(postponedId);
+            tx.oncomplete = () => {
+                document.getElementById('postponedScreen').classList.add('hidden');
+                formScreen.classList.remove('hidden');
+                updatePostponedCount();
+                checkDraft();
+            };
         }
+    };
+  }
 
-        renderAll();
-    </script>
+  // Вызов модалки при попытке "Завершить"
+  document.getElementById('resetAllBtn').addEventListener('click', () => {
+    document.getElementById('confirmFinishModal').style.display = 'flex';
+  });
+
+  // Отмена завершения (скрытие модалки)
+  document.getElementById('cancelFinishBtn').addEventListener('click', () => {
+    document.getElementById('confirmFinishModal').style.display = 'none';
+  });
+
+  // Подтверждение завершения работы и сброс данных
+  document.getElementById('confirmFinishBtn').addEventListener('click', () => {
+    document.getElementById('confirmFinishModal').style.display = 'none';
+    performReset();
+  });
+
+  // ================= МЕНЕДЖЕР АРХИВОВ =================
+
+  document.getElementById('openArchivesBtn').addEventListener('click', () => { formScreen.classList.add('hidden'); archiveScreen.classList.remove('hidden'); loadArchives(); });
+  document.getElementById('backFromArchivesBtn').addEventListener('click', () => { archiveScreen.classList.add('hidden'); formScreen.classList.remove('hidden'); isMultiSelectMode = false; selectedArchives.clear(); multiActionBar.classList.add('hidden'); archiveListContainer.style.paddingBottom = "0px"; });
+
+  let savedArchives = []; let selectedArchives = new Set(); let isMultiSelectMode = false;
+
+  function loadArchives() {
+    archiveListContainer.innerHTML = '<div style="text-align:center; padding: 20px; color: #64748b;">Загрузка архивов...</div>';
+    if (!db) { archiveListContainer.innerHTML = '<div style="text-align:center; padding: 20px;">Ошибка БД</div>'; return; }
+    db.transaction("archives", "readonly").objectStore("archives").getAll().onsuccess = (e) => {
+      savedArchives = e.target.result; savedArchives.sort((a, b) => b.date.localeCompare(a.date)); renderArchiveList();
+    };
+  }
+
+  function renderArchiveList() {
+    archiveListContainer.innerHTML = '';
+    if (savedArchives.length === 0) { archiveListContainer.innerHTML = '<div style="text-align:center; padding: 20px; color: #64748b;">Архивов пока нет.</div>'; multiActionBar.classList.add('hidden'); archiveListContainer.style.paddingBottom = "0px"; return; }
+    savedArchives.forEach(archive => {
+      const item = document.createElement('div'); item.className = 'archive-item'; if (selectedArchives.has(archive.name)) item.classList.add('selected');
+      const checkbox = document.createElement('div'); checkbox.className = 'archive-checkbox';
+      const info = document.createElement('div'); info.className = 'archive-info'; info.innerHTML = `<div class="archive-name">${archive.name}</div>`;
+      item.appendChild(checkbox); item.appendChild(info);
+      checkbox.addEventListener('click', (e) => { e.stopPropagation(); if (!isMultiSelectMode) isMultiSelectMode = true; toggleSelection(archive.name, item); });
+      item.addEventListener('click', () => { if (isMultiSelectMode) { toggleSelection(archive.name, item); } else { shareFiles([archive], "Отправка архива"); } });
+      let pressTimer; item.addEventListener('touchstart', () => { pressTimer = window.setTimeout(() => { if (!isMultiSelectMode) { isMultiSelectMode = true; toggleSelection(archive.name, item); renderArchiveList(); } }, 600); }, {passive: true}); item.addEventListener('touchend', () => clearTimeout(pressTimer));
+      archiveListContainer.appendChild(item);
+    });
+    if (isMultiSelectMode && selectedArchives.size > 0) { multiActionBar.classList.remove('hidden'); archiveListContainer.style.paddingBottom = "120px"; document.getElementById('multiSendBtn').innerText = `Отправить (${selectedArchives.size})`; document.getElementById('multiDeleteBtn').innerText = `Удалить (${selectedArchives.size})`; } else { multiActionBar.classList.add('hidden'); archiveListContainer.style.paddingBottom = "0px"; if (selectedArchives.size === 0) isMultiSelectMode = false; }
+  }
+
+  function toggleSelection(name, itemElement) { if (selectedArchives.has(name)) { selectedArchives.delete(name); itemElement.classList.remove('selected'); } else { selectedArchives.add(name); itemElement.classList.add('selected'); } renderArchiveList(); }
+  document.getElementById('selectAllBtn').addEventListener('click', () => { savedArchives.forEach(a => selectedArchives.add(a.name)); renderArchiveList(); });
+  document.getElementById('deselectAllBtn').addEventListener('click', () => { selectedArchives.clear(); isMultiSelectMode = false; renderArchiveList(); });
+
+  async function shareFiles(filesDataArray, subjectText) {
+    const filesToShare = [];
+    filesDataArray.forEach(f => {
+      let fileBlob;
+      // Восстанавливаем файл из железобетонного Base64
+      if (f.base64) {
+         fileBlob = new Blob([base64ToUint8(f.base64)], { type: "application/zip" });
+      } else if (f.data) {
+         fileBlob = new Blob([f.data], { type: "application/zip" });
+      } else {
+         fileBlob = f.blob;
+      }
+      filesToShare.push(new File([fileBlob], f.name, { type: "application/zip" }));
+    });
+
+    if (navigator.canShare && navigator.canShare({ files: filesToShare })) {
+      try {
+        let textMsg = filesDataArray.length === 1 ? filesDataArray[0].text : "Архивы фотоотчетов во вложении.";
+        await navigator.share({ files: filesToShare, title: subjectText, text: textMsg });
+        if (isMultiSelectMode) { selectedArchives.clear(); isMultiSelectMode = false; renderArchiveList(); } return;
+      } catch (err) { console.log("Share skipped/failed"); }
+    }
+
+    filesDataArray.forEach(f => {
+      let fileBlob = f.base64 ? new Blob([base64ToUint8(f.base64)], { type: "application/zip" }) : (f.data ? new Blob([f.data], { type: "application/zip" }) : f.blob);
+      const link = document.createElement('a'); link.href = URL.createObjectURL(fileBlob); link.download = f.name; document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    });
+    if (isMultiSelectMode) { selectedArchives.clear(); isMultiSelectMode = false; renderArchiveList(); }
+  }
+
+  function deleteFiles(namesArray) {
+    if (confirm(`Удалить выбранные архивы (${namesArray.length} шт)?`)) {
+      const tx = db.transaction("archives", "readwrite"); const store = tx.objectStore("archives");
+      namesArray.forEach(name => store.delete(name));
+      tx.oncomplete = () => { selectedArchives.clear(); isMultiSelectMode = false; loadArchives(); };
+    }
+  }
+
+  document.getElementById('multiSendBtn').addEventListener('click', () => { let toShare = savedArchives.filter(a => selectedArchives.has(a.name)); shareFiles(toShare, "Множественная отправка"); });
+  document.getElementById('multiDeleteBtn').addEventListener('click', () => { deleteFiles(Array.from(selectedArchives)); });
+
+  const modal = document.getElementById('photoModal'), modalImg = document.getElementById('modalImg'), modalWrapper = document.getElementById('modalWrapper');
+  let scale = 1, startDist = 0, isDragging = false, startX = 0, startY = 0, posX = 0, posY = 0;
+  function openLightbox(url) { modalImg.src = url; modal.style.display = 'flex'; resetZoom(); }
+  function closeLightbox() { modal.style.display = 'none'; modalImg.src = ''; }
+  function resetZoom() { scale = 1; posX = 0; posY = 0; updateTransform(); }
+  function updateTransform() { modalWrapper.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`; }
+  document.getElementById('modalClose').addEventListener('click', closeLightbox);
+  modal.addEventListener('click', (e) => { if (e.target === modal || e.target === modalWrapper) closeLightbox(); });
+  modal.addEventListener('touchstart', (e) => { if (e.touches.length === 2) { startDist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY); } else if (e.touches.length === 1 && scale > 1) { isDragging = true; startX = e.touches[0].pageX - posX; startY = e.touches[0].pageY - posY; } }, { passive: true });
+  modal.addEventListener('touchmove', (e) => { if (e.touches.length === 2 && startDist > 0) { const dist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY); scale = Math.min(Math.max(1, (dist / startDist)), 4); updateTransform(); } else if (e.touches.length === 1 && isDragging) { posX = e.touches[0].pageX - startX; posY = e.touches[0].pageY - startY; updateTransform(); } }, { passive: true });
+  modal.addEventListener('touchend', (e) => { if (e.touches.length < 2) startDist = 0; if (e.touches.length === 0) isDragging = false; });
+</script>
+
+<script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js" onload="initFirebase()"></script>
+
 </body>
 </html>
