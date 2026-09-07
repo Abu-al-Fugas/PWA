@@ -279,7 +279,7 @@
     </div>
   </div>
 
-  <footer>iPhone | Версия 2.4.0 (СТМ-население)</footer>
+  <footer>iPhone | Версия 2.5.0 (stab)</footer>
 </div>
 
 <div id="photoModal" class="modal">
@@ -372,6 +372,44 @@
       });
       syncPendingRecords();
     }
+  }
+
+  // Флаг для блокировки параллельных отправок
+  let isSyncing = false;
+  
+  function syncPendingRecords() {
+    if (!navigator.onLine || !db || !fbDb || isSyncing) return;
+    
+    // Включаем "замок", чтобы заблокировать параллельные вызовы
+    isSyncing = true; 
+    
+    db.transaction("pending_sync", "readonly").objectStore("pending_sync").getAll().onsuccess = async (e) => {
+      const records = e.target.result;
+      if (!records || records.length === 0) {
+          isSyncing = false; // Отключаем замок, если нечего отправлять
+          return;
+      }
+      
+      // Асинхронно и строго по очереди отправляем данные
+      for (let i = 0; i < records.length; i++) {
+          const record = records[i];
+          try {
+              await fbDb.ref('bot_installations').push(record.data);
+              // Дожидаемся успешного удаления из памяти, прежде чем переходить к следующему
+              await new Promise((resolve, reject) => {
+                  const req = db.transaction("pending_sync", "readwrite").objectStore("pending_sync").delete(record.id);
+                  req.onsuccess = resolve;
+                  req.onerror = reject;
+              });
+          } catch (err) {
+              console.log("Firebase sync err", err);
+              break; // Прерываем цикл, если сеть отвалилась. При появлении интернета процесс начнется заново для оставшихся
+          }
+      }
+      
+      // Снимаем замок после завершения цикла
+      isSyncing = false;
+    };
   }
 
   function uint8ToBase64(u8Arr) {
@@ -646,15 +684,6 @@
       state.gpsLocked = true; saveDraft();
       if (state.coordinates && !state.coordinates.error) { displayCoords.className = "geo-status-badge geo-success"; displayCoords.innerText = `${state.coordinates.lat.toFixed(6)}, ${state.coordinates.lng.toFixed(6)} (~${Math.round(state.coordinates.acc)}м) - Зафиксировано`; } else { displayCoords.className = "geo-status-badge geo-error"; displayCoords.innerText = "Спутники не найдены"; }
     }, 20000);
-  }
-
-  function syncPendingRecords() {
-    if (!navigator.onLine || !db || !fbDb) return;
-    db.transaction("pending_sync", "readonly").objectStore("pending_sync").getAll().onsuccess = (e) => {
-      e.target.result.forEach(record => {
-        fbDb.ref('bot_installations').push(record.data).then(() => { db.transaction("pending_sync", "readwrite").objectStore("pending_sync").delete(record.id); }).catch(err => console.log("Firebase sync err", err));
-      });
-    };
   }
 
   window.addEventListener('online', () => { syncStatus.classList.add('hidden'); syncPendingRecords(); });
@@ -1112,7 +1141,7 @@
     const gps = (state.coordinates && !state.coordinates.error) ? `${state.coordinates.lat.toFixed(6)}, ${state.coordinates.lng.toFixed(6)}` : 'Не определены';
     const datetime = formatDateTime(state.creationDate); 
     
-    const appVersionText = document.querySelector('footer') ? document.querySelector('footer').innerText : 'Версия 2.4.0';
+    const appVersionText = document.querySelector('footer') ? document.querySelector('footer').innerText : 'Версия 2.5.0';
     
     let oldMeterText = "";
     for(let m=1; m<=state.oldMeterCount; m++) {
@@ -1243,10 +1272,17 @@
         timestamp: Date.now() 
       };
 
-      function pushToFirebase(data) { if (fbDb && navigator.onLine) { fbDb.ref('bot_installations').push(data).catch(() => saveToPendingSync(data)); } else { saveToPendingSync(data); } }
-      function saveToPendingSync(data) { if (!db) return; db.transaction("pending_sync", "readwrite").objectStore("pending_sync").add({ data: data }); }
+      // НОВАЯ ЛОГИКА: Всегда сначала сохраняем данные в локальную память и только после успешного сохранения запускаем процесс синхронизации.
+      function saveAndSync(data) {
+        if (!db) return;
+        const tx = db.transaction("pending_sync", "readwrite");
+        tx.objectStore("pending_sync").add({ data: data });
+        tx.oncomplete = () => { 
+           syncPendingRecords(); 
+        };
+      }
       
-      pushToFirebase(fbReportData);
+      saveAndSync(fbReportData);
 
       const base64Data = uint8ToBase64(finalZipUint8);
       if (db) {
