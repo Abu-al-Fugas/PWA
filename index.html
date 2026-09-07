@@ -38,12 +38,10 @@
     .scan-btn { background: #e2e8f0; color: #1e293b; border: 1px solid #cbd5e1; border-radius: 12px; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; cursor: pointer; flex-shrink: 0; transition: background 0.2s; }
     .scan-btn:active { background: #cbd5e1; }
 
-    /* Равномерный размер кнопок (добавлен прозрачный border и уменьшен padding) */
     button { background: #2b7a4b; color: white; border: 1px solid transparent; border-radius: 14px; padding: 13px 20px; font-size: 1rem; font-weight: 600; width: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: background 0.2s; }
     button:active { transform: scale(0.98); background: #1f5a3b; }
     button:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; transform: none; }
     
-    /* Стили новых кнопок действий */
     button.action-btn-outline { background: transparent; color: #334155; border: 1px solid #cbd5e1; box-shadow: none; font-weight: 600; }
     button.action-btn-outline:active { background: #f8fafc; }
     button.action-btn-danger { background: #fef2f2; color: #ef4444; border: 1px solid #fca5a5; box-shadow: none; font-weight: 600; }
@@ -76,7 +74,6 @@
     .modal-wrapper { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; transition: transform 0.1s ease-out; }
     .modal-img { max-width: 95%; max-height: 85%; object-fit: contain; pointer-events: none; }
     
-    /* Стили для сканера штрихкодов в PWA */
     #scannerModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
     #scannerModalClose { position: absolute; top: max(20px, env(safe-area-inset-top)); right: 20px; width: 40px; height: 40px; background: rgba(255,255,255,0.2); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; z-index: 2010; cursor: pointer; }
     #reader { width: 100%; max-width: 500px; background: #000; border-radius: 12px; overflow: hidden; }
@@ -107,14 +104,12 @@
 
     footer { text-align: center; font-size: 0.75rem; color: #94a3b8; margin-top: 20px; }
 
-    /* Стили для радио-групп с красной/зеленой валидацией */
     .radio-wrapper { border: 1px solid #ef4444; border-radius: 12px; padding: 4px; transition: border-color 0.3s; }
     .radio-wrapper.valid { border-color: #22c55e !important; }
     .radio-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
     .radio-card { display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid #cbd5e1; padding: 10px 8px; border-radius: 8px; font-size: 0.9rem; color: #334155; cursor: pointer; }
     .radio-card input[type="radio"] { width: 18px; height: 18px; accent-color: #2b7a4b; flex-shrink: 0; margin: 0; }
 
-    /* Динамически создаваемые классы для чек-листа */
     .dynamic-input-row { display: flex; gap: 8px; margin-bottom: 8px; }
     .dynamic-input-row input { flex-grow: 1; padding: 8px 12px; border-radius: 10px; font-size: 0.9rem; }
     .model-select-btn { flex-shrink: 0; width: 140px; padding: 8px; border-radius: 10px; font-size: 0.85rem; background-color: #f8fafc; color: #334155; border: 1px solid #cbd5e1; box-shadow: none; display: flex; justify-content: space-between; align-items: center; }
@@ -130,12 +125,10 @@
   
   <div id="formScreen">
     
-    <!-- Заголовок -->
     <div class="card" style="padding-bottom: 12px;">
       <h1 style="margin-bottom: 0;">СТМ-население</h1>
     </div>
 
-    <!-- Блок 1: Объект -->
     <div class="card">
       <h2>📍 Объект установки</h2>
       
@@ -169,7 +162,6 @@
       </div>
     </div>
 
-    <!-- Блок 2: Монтаж -->
     <div class="card">
       <h2>🔧 Данные монтажа</h2>
       
@@ -189,7 +181,6 @@
       </div>
     </div>
 
-    <!-- Блок 3: Потребитель -->
     <div class="card">
       <h2>👤 Потребитель</h2>
 
@@ -218,7 +209,6 @@
       </div>
     </div>
     
-    <!-- Кнопки управления -->
     <div style="padding: 0 4px;">
       <button id="startReportBtn" style="margin-bottom: 12px;">▶ Начать фотоотчёт</button>
       <button id="openPostponedBtn" class="secondary" style="margin-bottom: 12px; display: none; background: #fefce8; border: 1px solid #eab308; color: #a16207;">🕒 Отложенные отчеты (<span id="postponedCount">0</span>)</button>
@@ -237,7 +227,6 @@
       Внимание: Нет сети. Отчет будет сохранен локально и отправлен в базу позже.
     </div>
 
-    <!-- Контейнер для сгруппированных фотокарточек -->
     <div id="mandatoryListContainer"></div>
 
     <div class="card">
@@ -270,7 +259,6 @@
     </div>
   </div>
 
-  <!-- ЭКРАН ОТЛОЖЕННЫХ ОТЧЕТОВ -->
   <div id="postponedScreen" class="hidden">
     <div class="card">
       <h2>🕒 Отложенные отчеты</h2>
@@ -329,7 +317,6 @@
   </div>
 </div>
 
-<!-- Модальное окно для поиска моделей старого счетчика -->
 <div id="modelSearchModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 6000; justify-content: center; align-items: center; padding: 16px; flex-direction: column;">
   <div style="background: white; width: 100%; max-width: 500px; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; max-height: 80vh;">
     <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -344,19 +331,13 @@
 <input type="file" id="globalFileInput" accept="image/*" multiple class="hidden">
 
 <script>
-  // Безопасная работа с localStorage (защита от падений в приватном режиме)
-  function safeGetLocal(key) {
-      try { return localStorage.getItem(key); } catch(e) { return null; }
-  }
-  function safeSetLocal(key, value) {
-      try { localStorage.setItem(key, value); } catch(e) { console.warn("localStorage недоступен"); }
-  }
+  function safeGetLocal(key) { try { return localStorage.getItem(key); } catch(e) { return null; } }
+  function safeSetLocal(key, value) { try { localStorage.setItem(key, value); } catch(e) { console.warn("localStorage недоступен"); } }
 
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js?v=1.0').then(() => console.log('PWA Offline Ready'));
   }
 
-  // ---- Firebase config ----
   const firebaseConfig = {
     apiKey: "AIzaSyCofoBIWqUX_P8pQUIKKbitEG2GTbXT7Ak",
     authDomain: "botstm100.firebaseapp.com",
@@ -381,9 +362,8 @@
     }
   }
 
-  // ---- Вспомогательные функции для ЖЕЛЕЗОБЕТОННОГО сохранения Base64 ----
   function uint8ToBase64(u8Arr) {
-    let CHUNK_SIZE = 8192; // Безопасный размер для слабого железа
+    let CHUNK_SIZE = 8192; 
     let index = 0;
     let length = u8Arr.length;
     let result = '';
@@ -406,7 +386,6 @@
     return bytes;
   }
 
-  // ---- IndexedDB УНИВЕРСАЛЬНАЯ БАЗА ----
   let db;
   const dbRequest = indexedDB.open("EtalonPWA_DB", 5);
   dbRequest.onupgradeneeded = (e) => {
@@ -418,7 +397,6 @@
   dbRequest.onsuccess = (e) => { db = e.target.result; checkDraft(); updatePostponedCount(); };
   dbRequest.onerror = (e) => console.error("IndexedDB error", e);
 
-  // ---- Конфигурация чек-листа ----
   const mandatoryConfig = [
     { title: "🏠 Общий вид объекта (здания)", prefix: "01_building" },
     { title: "🛣️ Газопровод издалека", prefix: "02_place_before" },
@@ -455,7 +433,6 @@
   let currentZipName = "";
   let watchId = null; let gpsTimeoutId = null;
 
-  // DOM
   const formScreen = document.getElementById('formScreen');
   const checklistScreen = document.getElementById('checklistScreen');
   const archiveScreen = document.getElementById('archiveScreen');
@@ -503,7 +480,6 @@
     }
   }
 
-  // Подпись (Canvas)
   const sigCanvas = document.getElementById('signatureCanvas');
   const sigCtx = sigCanvas.getContext('2d', { willReadFrequently: true });
   let isDrawingSig = false;
@@ -685,16 +661,33 @@
 
   let html5QrCode = null;
   function startWebScanner(onSuccess) {
-    const modal = document.getElementById('scannerModal'); modal.style.display = 'flex';
+    const modal = document.getElementById('scannerModal'); 
+    modal.style.display = 'flex';
     if (!html5QrCode) { html5QrCode = new Html5Qrcode("reader"); }
-    html5QrCode.start( { facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 }, formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE, Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8, Html5QrcodeSupportedFormats.UPC_A, Html5QrcodeSupportedFormats.DATA_MATRIX ] },
-      (decodedText, decodedResult) => { stopWebScanner(); onSuccess(decodedText); }, (errorMessage) => { }
+    
+    // ДОБАВЛЕНЫ DATA_MATRIX И UPC_A, СКОРРЕКТИРОВАНА РАМКА ДЛЯ 2D КОДОВ
+    html5QrCode.start(
+      { facingMode: "environment" },
+      { 
+        fps: 15, 
+        qrbox: { width: 300, height: 200 }, // Немного увеличили высоту, чтобы квадратный Data Matrix влез
+        videoConstraints: { width: { ideal: 1280 }, height: { ideal: 720 } },
+        formatsToSupport: [ 
+          Html5QrcodeSupportedFormats.CODE_128, 
+          Html5QrcodeSupportedFormats.EAN_13,
+          Html5QrcodeSupportedFormats.UPC_A,
+          Html5QrcodeSupportedFormats.DATA_MATRIX,
+          Html5QrcodeSupportedFormats.QR_CODE 
+        ] 
+      },
+      (decodedText, decodedResult) => { stopWebScanner(); onSuccess(decodedText); },
+      (errorMessage) => { }
     ).catch((err) => { alert("Не удалось запустить камеру. Проверьте разрешения."); stopWebScanner(); });
   }
+  
   function stopWebScanner() { const modal = document.getElementById('scannerModal'); if (html5QrCode && html5QrCode.isScanning) { html5QrCode.stop().then(() => { modal.style.display = 'none'; }).catch(() => { modal.style.display = 'none'; }); } else { modal.style.display = 'none'; } }
   document.getElementById('scannerModalClose').addEventListener('click', stopWebScanner);
 
-  // ====== ЛОГИКА ЖИВОГО ПОИСКА ДЛЯ СТАРОГО СЧЕТЧИКА ======
   const allOldMeterModels = [
     "СГМН-1 G6", "СГМН-1М1-G6", "СГМН-МТ1-G6", "BK-G1,6", "BK-G2,5", "BK-G4", "BK-G4T",
     "BK-G6", "BK-G6T", "BK-G6MT", "ВКР-G4T", "G2.5 \"ОМЕГА\"-м", "G4 \"ОМЕГА\"-м", "G6 \"ОМЕГА\"-м",
@@ -757,12 +750,10 @@
   modelSearchInput.addEventListener('input', (e) => {
       renderModelList(e.target.value);
   });
-  // =======================================================
 
   function renderChecklist() {
-    mandatoryListContainer.innerHTML = '';
+    const fragment = document.createDocumentFragment();
     
-    // Создаем карточки-группы для уменьшения визуальной нагрузки
     const group1 = document.createElement('div'); group1.className = 'card';
     group1.innerHTML = '<h2>📍 Общие фото объекта</h2><div class="photo-grid"></div>';
     
@@ -772,9 +763,9 @@
     const group3 = document.createElement('div'); group3.className = 'card';
     group3.innerHTML = '<h2>🆕 Монтаж (Новый счетчик)</h2><div class="photo-grid"></div>';
     
-    mandatoryListContainer.appendChild(group1);
-    mandatoryListContainer.appendChild(group2);
-    mandatoryListContainer.appendChild(group3);
+    fragment.appendChild(group1);
+    fragment.appendChild(group2);
+    fragment.appendChild(group3);
 
     mandatoryConfig.forEach((cfg, idx) => {
       const isOldMeterCfg = [2, 3, 4, 5, 6].includes(idx);
@@ -782,7 +773,6 @@
 
       const item = document.createElement('div'); item.className = 'photo-item';
       
-      // Блокируем клики ТОЛЬКО для элементов, которые НЕ содержат галочку (idx !== 2)
       if (state.noOldMeter && isOldMeterCfg) {
         if (idx !== 2) {
           item.style.opacity = '0.4';
@@ -980,7 +970,6 @@
       }
       item.appendChild(mediaRow); 
 
-      // Распределяем элементы по нужным карточкам
       let targetGrid;
       if (idx === 0 || idx === 1) targetGrid = group1.querySelector('.photo-grid');
       else if (idx >= 2 && idx <= 6) targetGrid = group2.querySelector('.photo-grid');
@@ -989,6 +978,9 @@
       targetGrid.appendChild(item);
 
     });
+
+    mandatoryListContainer.innerHTML = '';
+    mandatoryListContainer.appendChild(fragment);
     validateForm();
   }
 
@@ -1050,7 +1042,6 @@
     const gps = (state.coordinates && !state.coordinates.error) ? `${state.coordinates.lat.toFixed(6)}, ${state.coordinates.lng.toFixed(6)}` : 'Не определены';
     const datetime = formatDateTime(state.creationDate); 
     
-    // Получаем текст версии из подвала
     const appVersionText = document.querySelector('footer') ? document.querySelector('footer').innerText : 'Версия 2.1.0';
     
     let oldMeterText = "";
@@ -1103,7 +1094,6 @@
       filesToPack.unshift({ name: 'report_info.txt', blob: new TextEncoder().encode(emailBodyText) });
       if (state.signatureDataUrl) { filesToPack.push({ name: 'signature.png', blob: dataURItoUint8Array(state.signatureDataUrl) }); }
 
-      // Формирование ZIP-архива разбито для лучшей читаемости
       let fileData = [], centralDir = [], offset = 0; const encoder = new TextEncoder();
       
       for (let i = 0; i < filesToPack.length; i++) {
@@ -1148,7 +1138,6 @@
       let sanitizedSerial = state.serialNumber.replace(/[^a-zа-яё0-9]/gi, '_').substring(0, 24);
       currentZipName = `${sanitizedSerial}_${dateStr}.zip`;
 
-      // Добавлен ключ objectName
       const fbReportData = { 
         objectName: "Частный дом",
         city: state.cityName || "",
@@ -1189,12 +1178,10 @@
       
       pushToFirebase(fbReportData);
 
-      // ЖЕЛЕЗОБЕТОННОЕ СОХРАНЕНИЕ
       const base64Data = uint8ToBase64(finalZipUint8);
       if (db) {
         const tx = db.transaction("archives", "readwrite");
         
-        // Успех фиксируется только после того, как база точно записала данные
         tx.oncomplete = function() {
           clearDraft();
           generateBtn.innerText = "✓ Архив сохранен!";
@@ -1203,7 +1190,6 @@
           shareTextBtn.classList.remove('hidden');
         };
 
-        // Если памяти не хватило или система оборвала процесс
         tx.onerror = function(err) {
           alert("Сбой записи в память. Проверьте свободное место на телефоне.");
           resetGenBtn();
@@ -1229,7 +1215,6 @@
   function resetGenBtn() { generateBtn.innerText = "Сформировать архив"; generateBtn.disabled = false; }
 
   shareTextBtn.addEventListener('click', () => {
-    // Вытаскиваем файл напрямую из базы
     const req = db.transaction("archives", "readonly").objectStore("archives").get(currentZipName);
     req.onsuccess = (e) => {
        const result = e.target.result;
@@ -1250,7 +1235,6 @@
     state.creationDate = new Date().toISOString(); startActiveGeoSearch(); saveDraft(); renderChecklist();
   });
 
-  // Отложенные отчеты: перехватываем функцию сброса
   function performReset() {
     state.photos.forEach(arr => { arr.forEach(p => URL.revokeObjectURL(p.dataUrl)); });
     state.photos2.forEach(arr => { arr.forEach(p => URL.revokeObjectURL(p.dataUrl)); });
@@ -1265,13 +1249,11 @@
     manualSendInstructions.classList.add('hidden'); shareTextBtn.classList.add('hidden'); resetGenBtn(); checklistScreen.classList.add('hidden'); formScreen.classList.remove('hidden');
   }
 
-  // Логика кнопки НАЗАД
   document.getElementById('goBackBtn').addEventListener('click', () => {
     checklistScreen.classList.add('hidden');
     formScreen.classList.remove('hidden');
   });
 
-  // Отложить отчет
   document.getElementById('postponeReportBtn').addEventListener('click', () => {
     if(!confirm('Отложить этот отчет? Вы сможете вернуться к нему позже на главном экране.')) return;
     const postponedId = "postponed_" + Date.now();
@@ -1285,14 +1267,12 @@
     }
   });
 
-  // Открытие отложенных отчетов
   document.getElementById('openPostponedBtn').addEventListener('click', () => {
     formScreen.classList.add('hidden');
     document.getElementById('postponedScreen').classList.remove('hidden');
     loadPostponedList();
   });
 
-  // Возврат из отложенных отчетов
   document.getElementById('backFromPostponedBtn').addEventListener('click', () => {
     document.getElementById('postponedScreen').classList.add('hidden');
     formScreen.classList.remove('hidden');
@@ -1364,23 +1344,18 @@
     };
   }
 
-  // Вызов модалки при попытке "Завершить"
   document.getElementById('resetAllBtn').addEventListener('click', () => {
     document.getElementById('confirmFinishModal').style.display = 'flex';
   });
 
-  // Отмена завершения (скрытие модалки)
   document.getElementById('cancelFinishBtn').addEventListener('click', () => {
     document.getElementById('confirmFinishModal').style.display = 'none';
   });
 
-  // Подтверждение завершения работы и сброс данных
   document.getElementById('confirmFinishBtn').addEventListener('click', () => {
     document.getElementById('confirmFinishModal').style.display = 'none';
     performReset();
   });
-
-  // ================= МЕНЕДЖЕР АРХИВОВ =================
 
   document.getElementById('openArchivesBtn').addEventListener('click', () => { formScreen.classList.add('hidden'); archiveScreen.classList.remove('hidden'); loadArchives(); });
   document.getElementById('backFromArchivesBtn').addEventListener('click', () => { archiveScreen.classList.add('hidden'); formScreen.classList.remove('hidden'); isMultiSelectMode = false; selectedArchives.clear(); multiActionBar.classList.add('hidden'); archiveListContainer.style.paddingBottom = "0px"; });
@@ -1419,7 +1394,6 @@
     const filesToShare = [];
     filesDataArray.forEach(f => {
       let fileBlob;
-      // Восстанавливаем файл из железобетонного Base64
       if (f.base64) {
          fileBlob = new Blob([base64ToUint8(f.base64)], { type: "application/zip" });
       } else if (f.data) {
@@ -1436,10 +1410,8 @@
         await navigator.share({ files: filesToShare, title: subjectText, text: textMsg });
         if (isMultiSelectMode) { selectedArchives.clear(); isMultiSelectMode = false; renderArchiveList(); } return;
       } catch (err) {
-          // Игнорируем ошибку отмены отправки
       }
     } else {
-        // Запасной план: скачивание
         filesDataArray.forEach(f => {
           let fileBlob = f.base64 ? new Blob([base64ToUint8(f.base64)], { type: "application/zip" }) : (f.data ? new Blob([f.data], { type: "application/zip" }) : f.blob);
           const link = document.createElement('a'); link.href = URL.createObjectURL(fileBlob); link.download = f.name; document.body.appendChild(link); link.click(); document.body.removeChild(link);
