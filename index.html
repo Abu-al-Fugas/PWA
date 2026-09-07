@@ -336,7 +336,18 @@
   function safeSetLocal(key, value) { try { localStorage.setItem(key, value); } catch(e) { console.warn("localStorage недоступен"); } }
 
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js?v=1.0').then(() => console.log('PWA Offline Ready'));
+    navigator.serviceWorker.register('sw.js').then((reg) => {
+      console.log('PWA Offline Ready');
+      reg.update();
+    });
+
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!refreshing) {
+        refreshing = true;
+        window.location.reload();
+      }
+    });
   }
 
   const firebaseConfig = {
