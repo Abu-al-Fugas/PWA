@@ -279,7 +279,7 @@
     </div>
   </div>
 
-  <footer>iPhone | Версия 2.2.0 (СТМ-население)</footer>
+  <footer>iPhone | Версия 2.1.0 (СТМ-население)</footer>
 </div>
 
 <div id="photoModal" class="modal">
@@ -665,13 +665,18 @@
     modal.style.display = 'flex';
     if (!html5QrCode) { html5QrCode = new Html5Qrcode("reader"); }
     
-    // ДОБАВЛЕНЫ DATA_MATRIX И UPC_A, СКОРРЕКТИРОВАНА РАМКА ДЛЯ 2D КОДОВ
+    // ДОБАВЛЕНО ЖЕСТКОЕ УКАЗАНИЕ ЗАДНЕЙ КАМЕРЫ (facingMode: "environment")
+    // ВНУТРЬ БЛОКА videoConstraints ДЛЯ ИСКЛЮЧЕНИЯ БАГА НА IOS
     html5QrCode.start(
       { facingMode: "environment" },
       { 
         fps: 15, 
-        qrbox: { width: 300, height: 200 }, // Немного увеличили высоту, чтобы квадратный Data Matrix влез
-        videoConstraints: { width: { ideal: 1280 }, height: { ideal: 720 } },
+        qrbox: { width: 300, height: 200 }, 
+        videoConstraints: { 
+          facingMode: "environment", // <--- ИСПРАВЛЕНИЕ ЗДЕСЬ
+          width: { ideal: 1280 }, 
+          height: { ideal: 720 } 
+        },
         formatsToSupport: [ 
           Html5QrcodeSupportedFormats.CODE_128, 
           Html5QrcodeSupportedFormats.EAN_13,
