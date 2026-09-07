@@ -77,7 +77,7 @@
     #scannerModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
     #scannerModalClose { position: absolute; top: max(20px, env(safe-area-inset-top)); right: 20px; width: 40px; height: 40px; background: rgba(255,255,255,0.2); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; z-index: 2010; cursor: pointer; }
     #reader { width: 100%; max-width: 500px; background: #000; border-radius: 12px; overflow: hidden; }
-    .scanner-tip { color: white; margin-top: 20px; font-size: 0.95rem; text-align: center; padding: 0 20px; }
+    .scanner-tip { color: white; margin-top: 20px; font-size: 0.95rem; text-align: center; padding: 0 20px; line-height: 1.4; }
 
     .hidden { display: none !important; }
     .geo-status-badge { display: inline-block; padding: 2px 6px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; margin-top: 4px; }
@@ -114,7 +114,7 @@
     .dynamic-input-row input { flex-grow: 1; padding: 8px 12px; border-radius: 10px; font-size: 0.9rem; }
     .model-select-btn { flex-shrink: 0; width: 140px; padding: 8px; border-radius: 10px; font-size: 0.85rem; background-color: #f8fafc; color: #334155; border: 1px solid #cbd5e1; box-shadow: none; display: flex; justify-content: space-between; align-items: center; }
     .model-select-btn span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .no-account-label { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.9rem; flex-shrink: 0; background: #f1f5f9; padding: 0 12px; border-radius: 10px; border: 1px solid #cbd5e1; cursor:pointer; }
+    .no-account-label { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.9rem; flex-shrink: 0; background: #f1f5f9; padding: 0 12px; border-radius: 10px; border: 1px solid #cbd5e1; cursor:pointer; transition: opacity 0.2s; }
     .no-account-label input { width: 18px; height: 18px; margin: 0; accent-color: #2b7a4b; }
     .scan-mini-btn { flex-shrink: 0; width: 42px; height: 42px; border-radius: 10px; margin: 0; padding: 0; }
   </style>
@@ -130,7 +130,7 @@
     </div>
 
     <div class="card">
-      <h2>📍 Объект установки</h2>
+      <h2>▶ Объект установки</h2>
       
       <div class="form-group">
         <label class="field-label required">Город/Городской округ</label>
@@ -163,7 +163,7 @@
     </div>
 
     <div class="card">
-      <h2>🔧 Данные монтажа</h2>
+      <h2>▶ Данные монтажа</h2>
       
       <div class="form-group">
         <label class="field-label required">ФИО монтажника</label>
@@ -182,7 +182,7 @@
     </div>
 
     <div class="card">
-      <h2>👤 Потребитель</h2>
+      <h2>▶ Потребитель</h2>
 
       <div class="form-group">
         <label class="field-label required">ФИО потребителя</label>
@@ -211,8 +211,8 @@
     
     <div style="padding: 0 4px;">
       <button id="startReportBtn" style="margin-bottom: 12px;">▶ Начать фотоотчёт</button>
-      <button id="openPostponedBtn" class="secondary" style="margin-bottom: 12px; display: none; background: #fefce8; border: 1px solid #eab308; color: #a16207;">🕒 Отложенные отчеты (<span id="postponedCount">0</span>)</button>
-      <button id="openArchivesBtn" class="secondary">📁 Сохраненные архивы</button>
+      <button id="openPostponedBtn" class="secondary" style="margin-bottom: 12px; display: none; background: #fefce8; border: 1px solid #eab308; color: #a16207;">▶ Отложенные отчеты (<span id="postponedCount">0</span>)</button>
+      <button id="openArchivesBtn" class="secondary">▶ Сохраненные архивы</button>
     </div>
 
   </div>
@@ -230,7 +230,7 @@
     <div id="mandatoryListContainer"></div>
 
     <div class="card">
-      <h2 style="font-size: 0.95rem; margin-bottom: 10px;">💬 Комментарий (необязательно)</h2>
+      <h2 style="font-size: 0.95rem; margin-bottom: 10px;">▶ Комментарий (необязательно)</h2>
       <textarea id="reportComment" rows="3" placeholder="Дополнительная информация, особенности монтажа..." style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #cbd5e1; font-family: inherit; font-size: 0.9rem; resize: vertical;"></textarea>
     </div>
 
@@ -253,7 +253,7 @@
 
   <div id="archiveScreen" class="hidden">
     <div class="card">
-      <h2>📁 Сохраненные архивы</h2>
+      <h2>▶ Сохраненные архивы</h2>
       <div id="archiveListContainer" class="archive-list"></div>
       <button id="backFromArchivesBtn" class="secondary" style="margin-top: 16px;">⬅ Назад</button>
     </div>
@@ -261,7 +261,7 @@
 
   <div id="postponedScreen" class="hidden">
     <div class="card">
-      <h2>🕒 Отложенные отчеты</h2>
+      <h2>▶ Отложенные отчеты</h2>
       <div style="font-size: 0.85rem; color: #64748b; margin-bottom: 12px;">Выберите отчет, чтобы продолжить работу с ним.</div>
       <div id="postponedListContainer" class="archive-list"></div>
       <button id="backFromPostponedBtn" class="secondary" style="margin-top: 16px;">⬅ Назад</button>
@@ -279,7 +279,7 @@
     </div>
   </div>
 
-  <footer>iPhone | Версия 2.3.0 (СТМ-население)</footer>
+  <footer>iPhone | Версия 2.4.0 (СТМ-население)</footer>
 </div>
 
 <div id="photoModal" class="modal">
@@ -290,7 +290,8 @@
 <div id="scannerModal">
   <div id="scannerModalClose">&times;</div>
   <div id="reader"></div>
-  <div class="scanner-tip">Наведите камеру на QR или штрихкод.<br>Фокус может занять несколько секунд.</div>
+  <button id="torchBtn" class="secondary" style="margin-top: 15px; width: 100%; max-width: 500px; padding: 12px 20px; font-size: 1rem; border-radius: 12px;">🔦 Вкл/Выкл фонарик</button>
+  <div class="scanner-tip">Держите телефон на расстоянии 15–20 см от кода.<br>Приложение само приблизит изображение для лучшего фокуса.</div>
 </div>
 
 <div id="signatureModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 3000; justify-content: center; align-items: center; padding: 16px; flex-direction: column;">
@@ -398,20 +399,20 @@
   dbRequest.onerror = (e) => console.error("IndexedDB error", e);
 
   const mandatoryConfig = [
-    { title: "🏠 Общий вид объекта (здания)", prefix: "01_building" },
-    { title: "🛣️ Газопровод издалека", prefix: "02_place_before" },
-    { title: "🕰️ Общий вид старого счетчика", prefix: "03_old_meter_view", hasOldModelInput: true }, 
-    { title: "🏷️ Серийный № и показания старого", prefix: "04_old_meter_serial", hasOldSerialAndReadings: true }, 
-    { title: "🏭 Пломба заводская 2-3 фото", prefix: "04_1_factory_seal" },
-    { title: "👮 Пломба контролера старого", prefix: "05_old_seal_controller", hasInput: true }, 
-    { title: "⬅️ Направление старого счетчика", prefix: "06_old_gas_direction" },
-    { title: "📦 Общий вид нового счётчика", prefix: "07_new_meter_view" },
-    { title: "🆕 Серийный № нового", prefix: "08_new_meter_serial", hasSerialInput: true }, 
-    { title: "📟 Показания нового", prefix: "09_new_meter_readings" },
-    { title: "↗️ Направление нового счетчика", prefix: "10_new_gas_direction", hasDirectionInput: true }, 
-    { title: "🛡️ Пломба нового счетчика", prefix: "11_new_seal" },
-    { title: "📑 Паспорт, отметка, SIM", prefix: "12_passport_sim", hasSimInput: true },
-    { title: "🗃️ Счетчик с коробом", prefix: "07_1_meter_with_box", conditionalMandatory: true }
+    { title: "▶ Общий вид объекта (здания)", prefix: "01_building" },
+    { title: "▶ Газопровод издалека", prefix: "02_place_before" },
+    { title: "▶ Общий вид старого счетчика", prefix: "03_old_meter_view", hasOldModelInput: true }, 
+    { title: "▶ Серийный № и показания старого", prefix: "04_old_meter_serial", hasOldSerialAndReadings: true }, 
+    { title: "▶ Пломба заводская 2-3 фото", prefix: "04_1_factory_seal" },
+    { title: "▶ Пломба контролера старого", prefix: "05_old_seal_controller", hasInput: true }, 
+    { title: "▶ Направление старого счетчика", prefix: "06_old_gas_direction" },
+    { title: "▶ Общий вид нового счётчика", prefix: "07_new_meter_view" },
+    { title: "▶ Серийный № нового", prefix: "08_new_meter_serial", hasSerialInput: true }, 
+    { title: "▶ Показания нового", prefix: "09_new_meter_readings" },
+    { title: "▶ Направление нового счетчика", prefix: "10_new_gas_direction", hasDirectionInput: true }, 
+    { title: "▶ Пломба нового счетчика", prefix: "11_new_seal" },
+    { title: "▶ Паспорт, отметка, SIM", prefix: "12_passport_sim", hasSimInput: true },
+    { title: "▶ Счетчик с коробом", prefix: "07_1_meter_with_box", conditionalMandatory: true }
   ];
 
   let state = { 
@@ -660,22 +661,30 @@
   accInput.addEventListener('input', (e) => { state.accountNumber = e.target.value.trim(); if (state.accountNumber !== "Нет") noAccCb.checked = false; saveDraft(); updateMainValidation(); });
 
   let html5QrCode = null;
+  let torchOn = false;
+
   function startWebScanner(onSuccess) {
     const modal = document.getElementById('scannerModal'); 
     modal.style.display = 'flex';
+    
+    // Сброс фонарика при открытии
+    torchOn = false;
+    const torchBtn = document.getElementById('torchBtn');
+    torchBtn.style.background = '';
+    torchBtn.style.color = '';
+
     if (!html5QrCode) { html5QrCode = new Html5Qrcode("reader"); }
     
-    // ДОБАВЛЕНО ЖЕСТКОЕ УКАЗАНИЕ ЗАДНЕЙ КАМЕРЫ (facingMode: "environment")
-    // ВНУТРЬ БЛОКА videoConstraints ДЛЯ ИСКЛЮЧЕНИЯ БАГА НА IOS
     html5QrCode.start(
       { facingMode: "environment" },
       { 
         fps: 15, 
         qrbox: { width: 300, height: 200 }, 
         videoConstraints: { 
-          facingMode: "environment", // <--- ИСПРАВЛЕНИЕ ЗДЕСЬ
+          facingMode: "environment", 
           width: { ideal: 1280 }, 
-          height: { ideal: 720 } 
+          height: { ideal: 720 },
+          advanced: [{ zoom: 1.5 }] 
         },
         formatsToSupport: [ 
           Html5QrcodeSupportedFormats.CODE_128, 
@@ -690,8 +699,32 @@
     ).catch((err) => { alert("Не удалось запустить камеру. Проверьте разрешения."); stopWebScanner(); });
   }
   
-  function stopWebScanner() { const modal = document.getElementById('scannerModal'); if (html5QrCode && html5QrCode.isScanning) { html5QrCode.stop().then(() => { modal.style.display = 'none'; }).catch(() => { modal.style.display = 'none'; }); } else { modal.style.display = 'none'; } }
+  function stopWebScanner() { 
+      const modal = document.getElementById('scannerModal'); 
+      if (html5QrCode && html5QrCode.isScanning) { 
+          html5QrCode.stop().then(() => { modal.style.display = 'none'; }).catch(() => { modal.style.display = 'none'; }); 
+      } else { 
+          modal.style.display = 'none'; 
+      } 
+  }
+  
   document.getElementById('scannerModalClose').addEventListener('click', stopWebScanner);
+
+  // Управление фонариком
+  document.getElementById('torchBtn').addEventListener('click', async () => {
+    if (html5QrCode && html5QrCode.getState() === Html5QrcodeScannerState.SCANNING) {
+      try {
+        torchOn = !torchOn;
+        await html5QrCode.applyVideoConstraints({ advanced: [{ torch: torchOn }] });
+        const btn = document.getElementById('torchBtn');
+        btn.style.background = torchOn ? '#2b7a4b' : '';
+        btn.style.color = torchOn ? 'white' : '';
+      } catch (err) {
+        alert("Фонарик не поддерживается на этой камере или устройстве.");
+        torchOn = !torchOn;
+      }
+    }
+  });
 
   const allOldMeterModels = [
     "СГМН-1 G6", "СГМН-1М1-G6", "СГМН-МТ1-G6", "BK-G1,6", "BK-G2,5", "BK-G4", "BK-G4T",
@@ -760,13 +793,13 @@
     const fragment = document.createDocumentFragment();
     
     const group1 = document.createElement('div'); group1.className = 'card';
-    group1.innerHTML = '<h2>📍 Общие фото объекта</h2><div class="photo-grid"></div>';
+    group1.innerHTML = '<h2>▶ Общие фото объекта</h2><div class="photo-grid"></div>';
     
     const group2 = document.createElement('div'); group2.className = 'card';
-    group2.innerHTML = '<h2>🕰️ Демонтаж (Старый счетчик)</h2><div class="photo-grid"></div>';
+    group2.innerHTML = '<h2>▶ Демонтаж (Старый счетчик)</h2><div class="photo-grid"></div>';
     
     const group3 = document.createElement('div'); group3.className = 'card';
-    group3.innerHTML = '<h2>🆕 Монтаж (Новый счетчик)</h2><div class="photo-grid"></div>';
+    group3.innerHTML = '<h2>▶ Монтаж (Новый счетчик)</h2><div class="photo-grid"></div>';
     
     fragment.appendChild(group1);
     fragment.appendChild(group2);
@@ -860,19 +893,40 @@
         item.appendChild(inputDiv);
       }
 
+      // ЛОГИКА ДЛЯ ПРОПУСКА ЗАВОДСКОГО НОМЕРА
       if (cfg.hasOldSerialAndReadings) {
-        let inputClassS = state.noOldMeter ? 'neutral-border' : (state.oldMeterSerial ? 'valid' : '');
+        let isUnreadable = state.oldMeterSerial === 'Нечитаемый';
+        let inputClassS = state.noOldMeter ? 'neutral-border' : ((state.oldMeterSerial || isUnreadable) ? 'valid' : '');
         let inputClassR = state.noOldMeter ? 'neutral-border' : (state.oldMeterReadings ? 'valid' : '');
+        let displayVal = isUnreadable ? '' : state.oldMeterSerial;
 
         const inputDiv = document.createElement('div');
         inputDiv.innerHTML = `
-          <input type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Заводской №" value="${state.oldMeterSerial}" class="${inputClassS}" style="width: 100%; padding: 8px 12px; margin-bottom: 8px; border-radius: 10px; font-size: 0.9rem;" ${disabledAttr}>
+          <div class="dynamic-input-row" style="margin-bottom: 8px;">
+              <input type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Заводской №" value="${displayVal}" class="${inputClassS}" ${disabledAttr || isUnreadable ? 'disabled' : ''}>
+              <label class="no-account-label" style="${disabledAttr ? 'opacity:0.5; pointer-events:none;' : ''}">
+                <input type="checkbox" id="unreadableSerialCb" ${isUnreadable ? 'checked' : ''} ${disabledAttr}> № нечитаемый
+              </label>
+          </div>
           <input type="text" inputmode="decimal" placeholder="Показания" value="${state.oldMeterReadings}" class="${inputClassR}" style="width: 100%; padding: 8px 12px; margin-bottom: 8px; border-radius: 10px; font-size: 0.9rem;" ${disabledAttr}>`;
         
-        const inputs = inputDiv.querySelectorAll('input');
+        const inputs = inputDiv.querySelectorAll('input[type="text"]');
+        const cb = inputDiv.querySelector('#unreadableSerialCb');
+
         inputs[0].addEventListener('input', (e) => { 
           state.oldMeterSerial=e.target.value.trim(); e.target.classList.toggle('valid', state.oldMeterSerial !== ''); saveDraft(); validateForm(); 
         });
+        
+        cb.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                state.oldMeterSerial = 'Нечитаемый';
+            } else {
+                state.oldMeterSerial = '';
+            }
+            saveDraft();
+            renderChecklist();
+        });
+
         inputs[1].addEventListener('input', (e) => { 
           state.oldMeterReadings=e.target.value.trim(); e.target.classList.toggle('valid', state.oldMeterReadings !== ''); saveDraft(); validateForm(); 
         });
@@ -1047,7 +1101,7 @@
     const gps = (state.coordinates && !state.coordinates.error) ? `${state.coordinates.lat.toFixed(6)}, ${state.coordinates.lng.toFixed(6)}` : 'Не определены';
     const datetime = formatDateTime(state.creationDate); 
     
-    const appVersionText = document.querySelector('footer') ? document.querySelector('footer').innerText : 'Версия 2.1.0';
+    const appVersionText = document.querySelector('footer') ? document.querySelector('footer').innerText : 'Версия 2.4.0';
     
     let oldMeterText = "";
     for(let m=1; m<=state.oldMeterCount; m++) {
