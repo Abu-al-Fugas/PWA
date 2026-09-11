@@ -41,6 +41,7 @@
     button { background: #2b7a4b; color: white; border: 1px solid transparent; border-radius: 14px; padding: 13px 20px; font-size: 1rem; font-weight: 600; width: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: background 0.2s; }
     button:active { transform: scale(0.98); background: #1f5a3b; }
     button:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; transform: none; }
+    button.danger-btn:disabled { background: #cbd5e1 !important; color: #94a3b8 !important; border-color: #cbd5e1 !important; box-shadow: none !important; }
     
     button.action-btn-outline { background: transparent; color: #334155; border: 1px solid #cbd5e1; box-shadow: none; font-weight: 600; }
     button.action-btn-outline:active { background: #f8fafc; }
@@ -279,7 +280,7 @@
     </div>
   </div>
 
-  <footer>iPhone | Версия 2.5.0 (stab)</footer>
+  <footer>iPhone | Версия 2.6.0 (stab)</footer>
 </div>
 
 <div id="photoModal" class="modal">
@@ -1141,7 +1142,7 @@
     const gps = (state.coordinates && !state.coordinates.error) ? `${state.coordinates.lat.toFixed(6)}, ${state.coordinates.lng.toFixed(6)}` : 'Не определены';
     const datetime = formatDateTime(state.creationDate); 
     
-    const appVersionText = document.querySelector('footer') ? document.querySelector('footer').innerText : 'Версия 2.5.0';
+    const appVersionText = document.querySelector('footer') ? document.querySelector('footer').innerText : 'Версия 2.6.0';
     
     let oldMeterText = "";
     for(let m=1; m<=state.oldMeterCount; m++) {
@@ -1478,18 +1479,59 @@
 
   function renderArchiveList() {
     archiveListContainer.innerHTML = '';
-    if (savedArchives.length === 0) { archiveListContainer.innerHTML = '<div style="text-align:center; padding: 20px; color: #64748b;">Архивов пока нет.</div>'; multiActionBar.classList.add('hidden'); archiveListContainer.style.paddingBottom = "0px"; return; }
+    if (savedArchives.length === 0) { 
+        archiveListContainer.innerHTML = '<div style="text-align:center; padding: 20px; color: #64748b;">Архивов пока нет.</div>'; 
+        multiActionBar.classList.add('hidden'); archiveListContainer.style.paddingBottom = "0px"; return; 
+    }
+    
     savedArchives.forEach(archive => {
-      const item = document.createElement('div'); item.className = 'archive-item'; if (selectedArchives.has(archive.name)) item.classList.add('selected');
+      const item = document.createElement('div'); item.className = 'archive-item'; 
+      if (selectedArchives.has(archive.name)) item.classList.add('selected');
+      
       const checkbox = document.createElement('div'); checkbox.className = 'archive-checkbox';
-      const info = document.createElement('div'); info.className = 'archive-info'; info.innerHTML = `<div class="archive-name">${archive.name}</div>`;
+      
+      const TWENTY_DAYS_MS = 20 * 24 * 60 * 60 * 1000;
+      const isProtected = archive.date ? (Date.now() - new Date(archive.date).getTime() < TWENTY_DAYS_MS) : false;
+      const badgeHtml = isProtected ? `<div style="font-size: 0.75rem; color: #ef4444; margin-top: 4px;">🔒 Удаление через 20 дней</div>` : ``;
+
+      const info = document.createElement('div'); info.className = 'archive-info'; 
+      info.innerHTML = `<div class="archive-name">${archive.name}</div>${badgeHtml}`;
+      
       item.appendChild(checkbox); item.appendChild(info);
       checkbox.addEventListener('click', (e) => { e.stopPropagation(); if (!isMultiSelectMode) isMultiSelectMode = true; toggleSelection(archive.name, item); });
       item.addEventListener('click', () => { if (isMultiSelectMode) { toggleSelection(archive.name, item); } else { shareFiles([archive], "Отправка архива"); } });
       let pressTimer; item.addEventListener('touchstart', () => { pressTimer = window.setTimeout(() => { if (!isMultiSelectMode) { isMultiSelectMode = true; toggleSelection(archive.name, item); renderArchiveList(); } }, 600); }, {passive: true}); item.addEventListener('touchend', () => clearTimeout(pressTimer));
       archiveListContainer.appendChild(item);
     });
-    if (isMultiSelectMode && selectedArchives.size > 0) { multiActionBar.classList.remove('hidden'); archiveListContainer.style.paddingBottom = "120px"; document.getElementById('multiSendBtn').innerText = `Отправить (${selectedArchives.size})`; document.getElementById('multiDeleteBtn').innerText = `Удалить (${selectedArchives.size})`; } else { multiActionBar.classList.add('hidden'); archiveListContainer.style.paddingBottom = "0px"; if (selectedArchives.size === 0) isMultiSelectMode = false; }
+
+    if (isMultiSelectMode && selectedArchives.size > 0) { 
+      multiActionBar.classList.remove('hidden'); archiveListContainer.style.paddingBottom = "120px"; 
+      document.getElementById('multiSendBtn').innerText = `Отправить (${selectedArchives.size})`; 
+      
+      let canDeleteAll = true;
+      const TWENTY_DAYS_MS = 20 * 24 * 60 * 60 * 1000;
+      const now = Date.now();
+      
+      selectedArchives.forEach(name => {
+          const arch = savedArchives.find(a => a.name === name);
+          if (arch && arch.date && (now - new Date(arch.date).getTime() < TWENTY_DAYS_MS)) {
+              canDeleteAll = false;
+          }
+      });
+
+      const delBtn = document.getElementById('multiDeleteBtn');
+      if (!canDeleteAll) {
+          delBtn.disabled = true;
+          delBtn.innerText = "Блок (<20 дн)";
+      } else {
+          delBtn.disabled = false;
+          delBtn.innerText = `Удалить (${selectedArchives.size})`;
+      }
+
+    } else { 
+      multiActionBar.classList.add('hidden'); archiveListContainer.style.paddingBottom = "0px"; 
+      if (selectedArchives.size === 0) isMultiSelectMode = false; 
+    }
   }
 
   function toggleSelection(name, itemElement) { if (selectedArchives.has(name)) { selectedArchives.delete(name); itemElement.classList.remove('selected'); } else { selectedArchives.add(name); itemElement.classList.add('selected'); } renderArchiveList(); }
@@ -1527,9 +1569,29 @@
   }
 
   function deleteFiles(namesArray) {
-    if (confirm(`Удалить выбранные архивы (${namesArray.length} шт)?`)) {
+    const TWENTY_DAYS_MS = 20 * 24 * 60 * 60 * 1000;
+    const now = Date.now();
+    
+    // Фильтруем архивы: удаляем только те, которым больше 20 дней
+    const toDelete = namesArray.filter(name => {
+      const arch = savedArchives.find(a => a.name === name);
+      if (!arch || !arch.date) return true; // Разрешаем удаление старых архивов без даты
+      return (now - new Date(arch.date).getTime() >= TWENTY_DAYS_MS);
+    });
+
+    if (toDelete.length === 0) {
+      alert("Выбранные архивы защищены от удаления (не прошло 20 дней).");
+      return;
+    }
+
+    let msg = `Удалить выбранные архивы (${toDelete.length} шт)?`;
+    if (toDelete.length < namesArray.length) {
+      msg = `Внимание: ${namesArray.length - toDelete.length} архив(ов) защищено (не прошло 20 дней).\nУдалить остальные (${toDelete.length} шт)?`;
+    }
+
+    if (confirm(msg)) {
       const tx = db.transaction("archives", "readwrite"); const store = tx.objectStore("archives");
-      namesArray.forEach(name => store.delete(name));
+      toDelete.forEach(name => store.delete(name));
       tx.oncomplete = () => { selectedArchives.clear(); isMultiSelectMode = false; loadArchives(); };
     }
   }
