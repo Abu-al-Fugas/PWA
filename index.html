@@ -128,6 +128,7 @@
     
     <div class="card" style="padding-bottom: 12px;">
       <h1 style="margin-bottom: 0;">СТМ-население</h1>
+      <div id="storageInfo" style="text-align:center;font-size:0.75rem;color:#64748b;margin-top:-8px;margin-bottom:8px;"></div>
     </div>
 
     <div class="card">
@@ -437,7 +438,52 @@
     return bytes;
   }
 
+  function showFatalStorageError(msg) {
+    if (document.getElementById('fatalStorageBanner')) return;
+    const banner = document.createElement('div');
+    banner.id = 'fatalStorageBanner';
+    banner.style.cssText = "position:fixed;top:0;left:0;width:100%;background:#ef4444;color:white;z-index:9999;padding:max(16px, env(safe-area-inset-top)) 16px 16px 16px;box-shadow:0 4px 12px rgba(0,0,0,0.2);display:flex;flex-direction:column;gap:12px;";
+    banner.innerHTML = `
+      <div style="font-weight:bold;font-size:1.1rem;text-align:center;">⚠️ Критическая ошибка памяти</div>
+      <div style="font-size:0.95rem;line-height:1.4;text-align:center;">${msg}</div>
+      <div style="font-size:0.9rem;background:rgba(255,255,255,0.2);padding:12px;border-radius:8px;line-height:1.4;">
+        <b>Как исправить:</b><br>
+        1. Освободите 2-3 ГБ памяти на iPhone.<br>
+        2. Полностью закройте Safari (смахните вверх).<br>
+        3. Перезагрузите телефон.<br>
+        4. Если не помогло — очистите данные сайта в настройках Safari вручную.
+      </div>
+      <button style="background:white;color:#ef4444;border:none;padding:12px;border-radius:8px;font-weight:bold;font-size:1rem;margin-top:4px;" onclick="this.parentElement.remove()">Понятно</button>
+    `;
+    document.body.appendChild(banner);
+  }
+
+  function attemptRecoveryExport() {
+    if (!db) return;
+    const req = db.transaction("archives", "readonly").objectStore("archives").getAll();
+    req.onsuccess = (e) => {
+      const archives = e.target.result;
+      if (archives && archives.length >= 10 && !document.getElementById('recoveryBanner')) {
+        const banner = document.createElement('div');
+        banner.id = 'recoveryBanner';
+        banner.style.cssText = "position:fixed;bottom:0;left:0;width:100%;background:#fef08a;color:#854d0e;z-index:9999;padding:16px max(16px, env(safe-area-inset-bottom));box-shadow:0 -4px 12px rgba(0,0,0,0.1);display:flex;flex-direction:column;gap:12px;border-top-left-radius:20px;border-top-right-radius:20px;";
+        banner.innerHTML = `
+          <div style="font-weight:600;font-size:0.95rem;text-align:center;">У вас ${archives.length} архивов. Сохраните в Файлы, пока память не забита.</div>
+          <div style="display:flex;gap:10px;">
+            <button id="recoverySaveBtn" style="background:#ca8a04;color:white;flex:1;padding:12px;border-radius:10px;font-size:0.95rem;margin:0;border:none;">📥 Сохранить все</button>
+            <button style="background:#fef9c3;color:#854d0e;border:1px solid #fde047;flex:1;padding:12px;border-radius:10px;font-size:0.95rem;margin:0;" onclick="this.parentElement.parentElement.remove()">Позже</button>
+          </div>
+        `;
+        document.body.appendChild(banner);
+        document.getElementById('recoverySaveBtn').onclick = () => {
+          shareFiles(archives, "Резервная копия архивов");
+        };
+      }
+    };
+  }
+
   let db;
+  let dbOpened = false;
   const dbRequest = indexedDB.open("EtalonPWA_DB", 5);
   dbRequest.onupgradeneeded = (e) => {
     const database = e.target.result;
@@ -445,8 +491,29 @@
     if (!database.objectStoreNames.contains("drafts")) { database.createObjectStore("drafts", { keyPath: "id" }); }
     if (!database.objectStoreNames.contains("pending_sync")) { database.createObjectStore("pending_sync", { keyPath: "id", autoIncrement: true }); }
   };
-  dbRequest.onsuccess = (e) => { db = e.target.result; checkDraft(); updatePostponedCount(); };
-  dbRequest.onerror = (e) => console.error("IndexedDB error", e);
+  
+  dbRequest.onsuccess = (e) => { 
+    dbOpened = true;
+    db = e.target.result; 
+    checkDraft(); 
+    updatePostponedCount(); 
+    attemptRecoveryExport();
+  };
+  
+  dbRequest.onerror = (e) => {
+    console.error("IndexedDB error", e);
+    showFatalStorageError("Ошибка открытия БД (onerror). Переполнена память iPhone.");
+  };
+
+  dbRequest.onblocked = (e) => {
+    showFatalStorageError("База данных заблокирована (onblocked).");
+  };
+
+  setTimeout(() => {
+    if (!dbOpened) {
+      showFatalStorageError("IndexedDB не открылась за 8 секунд. Переполнена память iPhone.");
+    }
+  }, 8000);
 
   const mandatoryConfig = [
     { title: "▶ Общий вид объекта (здания)", prefix: "01_building" },
@@ -592,6 +659,18 @@
     const savedName = safeGetLocal('installerName'); 
     if (savedName) document.getElementById('installerName').value = savedName;
     updateMainValidation();
+    
+    // Обновляем метрику хранилища
+    if (navigator.storage && navigator.storage.estimate) {
+        navigator.storage.estimate().then(estimate => {
+            if (estimate.usage !== undefined && estimate.quota !== undefined) {
+                const used = (estimate.usage / (1024 * 1024)).toFixed(1);
+                const total = (estimate.quota / (1024 * 1024)).toFixed(1);
+                const si = document.getElementById('storageInfo');
+                if (si) si.innerText = `Занято ${used} МБ из ${total} МБ`;
+            }
+        }).catch(err => console.warn("Storage estimate error", err));
+    }
   });
   window.addEventListener('resize', () => {
     if(document.getElementById('signatureModal').style.display === 'flex') {
@@ -949,7 +1028,7 @@
                 <input type="checkbox" id="unreadableSerialCb" ${isUnreadable ? 'checked' : ''} ${disabledAttr}> № нечитаемый
               </label>
           </div>
-          <input type="text" inputmode="decimal" placeholder="Показания" value="${state.oldMeterReadings}" class="${inputClassR}" style="width: 100%; padding: 8px 12px; margin-bottom: 8px; border-radius: 10px; font-size: 0.9rem;" ${disabledAttr}>`;
+          <input type="text" inputmode="decimal" placeholder="Показания" value="${state.oldMeterReadings}" class="${inputClassR}" style="width: 100\%; padding: 8px 12px; margin-bottom: 8px; border-radius: 10px; font-size: 0.9rem;" ${disabledAttr}>`;
         
         const inputs = inputDiv.querySelectorAll('input[type="text"]');
         const cb = inputDiv.querySelector('#unreadableSerialCb');
@@ -1002,7 +1081,7 @@
       if (cfg.hasSerialInput && !isOldMeterCfg) {
         const inputDiv = document.createElement('div'); 
         inputDiv.className = 'dynamic-input-row';
-        inputDiv.innerHTML = `<input type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Заводской №" value="${state.serialNumber || ''}" class="${state.serialNumber ? 'valid' : ''}">
+        inputDiv.innerHTML = `<input type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Заводской №" value="${state.serialNumber \vert{}\vert{} ''}" class="${state.serialNumber ? 'valid' : ''}">
           <button class="scan-btn scan-mini-btn" type="button" aria-label="Сканировать">📷</button>`;
         const inputField = inputDiv.querySelector('input');
         inputField.addEventListener('input', (e) => { state.serialNumber = e.target.value.trim(); e.target.classList.toggle('valid', state.serialNumber !== ''); saveDraft(); validateForm(); });
@@ -1031,7 +1110,7 @@
       if (cfg.hasSimInput) {
         const inputDiv = document.createElement('div'); 
         inputDiv.className = 'dynamic-input-row';
-        inputDiv.innerHTML = `<input type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Введите № SIM-карты" value="${state.simCardNumber || ''}" class="${state.simCardNumber ? 'valid' : ''}">
+        inputDiv.innerHTML = `<input type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Введите № SIM-карты" value="${state.simCardNumber \vert{}\vert{} ''}" class="${state.simCardNumber ? 'valid' : ''}">
           <button class="scan-btn scan-mini-btn" type="button" aria-label="Сканировать">📷</button>`;
         const inputField = inputDiv.querySelector('input');
         inputField.addEventListener('input', (e) => { state.simCardNumber = e.target.value.trim(); e.target.classList.toggle('valid', state.simCardNumber !== ''); saveDraft(); validateForm(); });
@@ -1139,7 +1218,7 @@
   }
 
   function buildEmailBodyText() {
-    const gps = (state.coordinates && !state.coordinates.error) ? `${state.coordinates.lat.toFixed(6)}, ${state.coordinates.lng.toFixed(6)}` : 'Не определены';
+    const gps = (state.coordinates && !state.coordinates.error) ? `${state.coordinates.lat.toFixed(6)},${state.coordinates.lng.toFixed(6)}` : 'Не определены';
     const datetime = formatDateTime(state.creationDate); 
     
     const appVersionText = document.querySelector('footer') ? document.querySelector('footer').innerText : 'Версия 2.6.0';
@@ -1161,7 +1240,7 @@
         if (m < state.oldMeterCount) oldMeterText += "--------------------\n";
     }
 
-    let text = `• Объект: Частный дом\n• Город: ${state.cityName || 'не указан'}\n• Адрес: ${state.address}\n• Расположение: ${state.uirgLocation || 'не указано'}\n• GPS: ${gps}\n• Потребитель: ${state.consumerName}\n• ЛС: ${state.accountNumber}\n--------------------\n${oldMeterText}--------------------\n• Модель нового: ${state.meterModel}\n• № нового: ${state.serialNumber}\n• Направление: ${state.newGasDirection || 'нет'}\n• SIM: ${state.simCardNumber || 'нет'}\n--------------------\n• Комментарий: ${state.comment || 'нет'}\n--------------------\n• Монтажник: ${state.installerName}\n• Дата: ${datetime}\n--------------------\n• ${appVersionText}`;
+    let text = `• Объект: Частный дом\n• Город: ${state.cityName || 'не указан'}\n• Адрес: ${state.address}\n• Расположение: ${state.uirgLocation || 'не указано'}\n• GPS: ${gps}\n• Потребитель: ${state.consumerName}\n• ЛС: ${state.accountNumber}\n--------------------\n${oldMeterText}--------------------\n• Модель нового: ${state.meterModel}\n• № нового: ${state.serialNumber}\n• Направление: ${state.newGasDirection \vert{}\vert{} 'нет'}\n• SIM: ${state.simCardNumber || 'нет'}\n--------------------\n• Комментарий: ${state.comment \vert{}\vert{} 'нет'}\n--------------------\n• Монтажник: ${state.installerName}\n• Дата: ${datetime}\n--------------------\n• ${appVersionText}`;
     return text;
   }
 
@@ -1268,7 +1347,7 @@
         newGasDirection: state.newGasDirection || "", 
         simCardNumber: state.simCardNumber || "", 
         comment: state.comment || "",
-        gps: (state.coordinates && !state.coordinates.error) ? `${state.coordinates.lat.toFixed(6)}, ${state.coordinates.lng.toFixed(6)}` : 'Нет', 
+        gps: (state.coordinates && !state.coordinates.error) ? `${state.coordinates.lat.toFixed(6)},${state.coordinates.lng.toFixed(6)}` : 'Нет', 
         date: formatDateTime(state.creationDate), 
         timestamp: Date.now() 
       };
@@ -1285,7 +1364,7 @@
       
       saveAndSync(fbReportData);
 
-      const base64Data = uint8ToBase64(finalZipUint8);
+      const zipBlob = new Blob([finalZipUint8], {type:"application/zip"});
       if (db) {
         const tx = db.transaction("archives", "readwrite");
         
@@ -1308,7 +1387,7 @@
 
         tx.objectStore("archives").put({ 
           name: currentZipName, 
-          base64: base64Data, 
+          blob: zipBlob, 
           text: emailBodyText, 
           date: new Date().toISOString() 
         });
@@ -1471,10 +1550,27 @@
 
   function loadArchives() {
     archiveListContainer.innerHTML = '<div style="text-align:center; padding: 20px; color: #64748b;">Загрузка архивов...</div>';
-    if (!db) { archiveListContainer.innerHTML = '<div style="text-align:center; padding: 20px;">Ошибка БД</div>'; return; }
-    db.transaction("archives", "readonly").objectStore("archives").getAll().onsuccess = (e) => {
-      savedArchives = e.target.result; savedArchives.sort((a, b) => b.date.localeCompare(a.date)); renderArchiveList();
+    if (!db) {
+      archiveListContainer.innerHTML = '<div style="text-align:center; padding: 20px; color:#ef4444;">БД не открыта, см. предупреждение сверху</div>';
+      return;
+    }
+    let gotResult = false;
+    const req = db.transaction("archives", "readonly").objectStore("archives").getAll();
+    req.onsuccess = (e) => {
+      gotResult = true;
+      savedArchives = e.target.result;
+      savedArchives.sort((a, b) => b.date.localeCompare(a.date));
+      renderArchiveList();
     };
+    req.onerror = (e) => {
+      gotResult = true;
+      archiveListContainer.innerHTML = '<div style="text-align:center; padding: 20px; color:#ef4444;">Ошибка чтения БД</div>';
+    };
+    setTimeout(() => {
+      if (!gotResult) {
+        archiveListContainer.innerHTML = '<div style="text-align:center; padding: 20px; color:#ef4444;">Чтение архива зависло из-за нехватки памяти</div>';
+      }
+    }, 6000);
   }
 
   function renderArchiveList() {
@@ -1542,14 +1638,11 @@
     const filesToShare = [];
     filesDataArray.forEach(f => {
       let fileBlob;
-      if (f.base64) {
-         fileBlob = new Blob([base64ToUint8(f.base64)], { type: "application/zip" });
-      } else if (f.data) {
-         fileBlob = new Blob([f.data], { type: "application/zip" });
-      } else {
-         fileBlob = f.blob;
-      }
-      filesToShare.push(new File([fileBlob], f.name, { type: "application/zip" }));
+      if (f.blob) fileBlob = f.blob;
+      else if (f.base64) fileBlob = new Blob([base64ToUint8(f.base64)], {type:"application/zip"});
+      else if (f.data) fileBlob = new Blob([f.data], {type:"application/zip"});
+      else return;
+      filesToShare.push(new File([fileBlob], f.name, {type:"application/zip"}));
     });
 
     if (navigator.canShare && navigator.canShare({ files: filesToShare })) {
@@ -1561,7 +1654,11 @@
       }
     } else {
         filesDataArray.forEach(f => {
-          let fileBlob = f.base64 ? new Blob([base64ToUint8(f.base64)], { type: "application/zip" }) : (f.data ? new Blob([f.data], { type: "application/zip" }) : f.blob);
+          let fileBlob;
+          if (f.blob) fileBlob = f.blob;
+          else if (f.base64) fileBlob = new Blob([base64ToUint8(f.base64)], {type:"application/zip"});
+          else if (f.data) fileBlob = new Blob([f.data], {type:"application/zip"});
+          else return;
           const link = document.createElement('a'); link.href = URL.createObjectURL(fileBlob); link.download = f.name; document.body.appendChild(link); link.click(); document.body.removeChild(link);
         });
         if (isMultiSelectMode) { selectedArchives.clear(); isMultiSelectMode = false; renderArchiveList(); }
