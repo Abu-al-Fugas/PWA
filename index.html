@@ -27,6 +27,7 @@
     
     .input-wrapper { display: flex; gap: 8px; align-items: center; }
     
+    /* ВАЛИДАЦИЯ - КРАСНАЯ И ЗЕЛЕНАЯ КРОМКА */
     input[type="text"], input[type="number"], input[type="tel"], textarea, select { flex-grow: 1; width: 100%; padding: 12px 14px; font-size: 0.95rem; border: 1px solid #ef4444; border-radius: 12px; background: #fff; font-family: inherit; -webkit-appearance: none; transition: border-color 0.3s; }
     input:focus, textarea:focus, select:focus { outline: none; box-shadow: 0 0 0 3px rgba(43,122,75,0.15); }
     input.valid, select.valid, #signatureWrapper.valid, button.valid { border-color: #22c55e !important; }
@@ -127,7 +128,6 @@
     
     <div class="card" style="padding-bottom: 12px;">
       <h1 style="margin-bottom: 0;">СТМ-население</h1>
-      <div id="storageInfo" style="text-align:center;font-size:0.75rem;color:#64748b;margin-top:-8px;margin-bottom:8px;"></div>
     </div>
 
     <div class="card">
@@ -280,7 +280,7 @@
     </div>
   </div>
 
-  <footer>iPhone | Версия 2.6.0 (ahmed)</footer>
+  <footer>iPhone | Версия 2.6.0 (stab)</footer>
 </div>
 
 <div id="photoModal" class="modal">
@@ -437,99 +437,16 @@
     return bytes;
   }
 
-  function showFatalStorageError(msg) {
-    if (document.getElementById('fatalStorageBanner')) return;
-    const banner = document.createElement('div');
-    banner.id = 'fatalStorageBanner';
-    banner.style.cssText = "position:fixed;top:0;left:0;width:100%;background:#ef4444;color:white;z-index:9999;padding:max(16px, env(safe-area-inset-top)) 16px 16px 16px;box-shadow:0 4px 12px rgba(0,0,0,0.2);display:flex;flex-direction:column;gap:12px;";
-    banner.innerHTML = `
-      <div style="font-weight:bold;font-size:1.1rem;text-align:center;">⚠️ Критическая ошибка памяти</div>
-      <div style="font-size:0.95rem;line-height:1.4;text-align:center;">${msg}</div>
-      <div style="font-size:0.9rem;background:rgba(255,255,255,0.2);padding:12px;border-radius:8px;line-height:1.4;">
-        <b>Как исправить:</b><br>
-        1. Освободите 2-3 ГБ памяти на iPhone.<br>
-        2. Полностью закройте Safari (смахните вверх).<br>
-        3. Перезагрузите телефон.<br>
-        4. Если не помогло — очистите данные сайта в настройках Safari вручную.
-      </div>
-      <button style="background:white;color:#ef4444;border:none;padding:12px;border-radius:8px;font-weight:bold;font-size:1rem;margin-top:4px;" onclick="this.parentElement.remove()">Понятно</button>
-    `;
-    document.body.appendChild(banner);
-  }
-
-  function attemptRecoveryExport() {
-    if (!db) return;
-    const req = db.transaction("archives", "readonly").objectStore("archives").getAll();
-    req.onsuccess = (e) => {
-      const archives = e.target.result;
-      if (archives && archives.length >= 10 && !document.getElementById('recoveryBanner')) {
-        const banner = document.createElement('div');
-        banner.id = 'recoveryBanner';
-        banner.style.cssText = "position:fixed;bottom:0;left:0;width:100%;background:#fef08a;color:#854d0e;z-index:9999;padding:16px max(16px, env(safe-area-inset-bottom));box-shadow:0 -4px 12px rgba(0,0,0,0.1);display:flex;flex-direction:column;gap:12px;border-top-left-radius:20px;border-top-right-radius:20px;";
-        banner.innerHTML = `
-          <div style="font-weight:600;font-size:0.95rem;text-align:center;">У вас ${archives.length} архивов. Сохраните в Файлы, пока память не забита.</div>
-          <div style="display:flex;gap:10px;">
-            <button id="recoverySaveBtn" style="background:#ca8a04;color:white;flex:1;padding:12px;border-radius:10px;font-size:0.95rem;margin:0;border:none;">📥 Сохранить все</button>
-            <button style="background:#fef9c3;color:#854d0e;border:1px solid #fde047;flex:1;padding:12px;border-radius:10px;font-size:0.95rem;margin:0;" onclick="this.parentElement.parentElement.remove()">Позже</button>
-          </div>
-        `;
-        document.body.appendChild(banner);
-        document.getElementById('recoverySaveBtn').onclick = () => {
-          shareFiles(archives, "Резервная копия архивов");
-        };
-      }
-    };
-  }
-
   let db;
-  let dbOpened = false;
-  const dbRequest = indexedDB.open("EtalonPWA_DB", 6);
+  const dbRequest = indexedDB.open("EtalonPWA_DB", 5);
   dbRequest.onupgradeneeded = (e) => {
     const database = e.target.result;
-
-    let archivesStore;
-
-    if (!database.objectStoreNames.contains("archives")) {
-      archivesStore = database.createObjectStore("archives", { keyPath: "name" });
-    } else {
-      archivesStore = e.target.transaction.objectStore("archives");
-    }
-
-    if (!archivesStore.indexNames.contains("date")) {
-      archivesStore.createIndex("date", "date", { unique: false });
-    }
-
-    if (!database.objectStoreNames.contains("drafts")) {
-      database.createObjectStore("drafts", { keyPath: "id" });
-    }
-
-    if (!database.objectStoreNames.contains("pending_sync")) {
-      database.createObjectStore("pending_sync", { keyPath: "id", autoIncrement: true });
-    }
+    if (!database.objectStoreNames.contains("archives")) { database.createObjectStore("archives", { keyPath: "name" }); }
+    if (!database.objectStoreNames.contains("drafts")) { database.createObjectStore("drafts", { keyPath: "id" }); }
+    if (!database.objectStoreNames.contains("pending_sync")) { database.createObjectStore("pending_sync", { keyPath: "id", autoIncrement: true }); }
   };
-  
-  dbRequest.onsuccess = (e) => { 
-    dbOpened = true;
-    db = e.target.result; 
-    checkDraft(); 
-    updatePostponedCount(); 
-    attemptRecoveryExport();
-  };
-  
-  dbRequest.onerror = (e) => {
-    console.error("IndexedDB error", e);
-    showFatalStorageError("Ошибка открытия БД (onerror). Переполнена память iPhone.");
-  };
-
-  dbRequest.onblocked = (e) => {
-    showFatalStorageError("База данных заблокирована (onblocked).");
-  };
-
-  setTimeout(() => {
-    if (!dbOpened) {
-      showFatalStorageError("IndexedDB не открылась за 8 секунд. Переполнена память iPhone.");
-    }
-  }, 8000);
+  dbRequest.onsuccess = (e) => { db = e.target.result; checkDraft(); updatePostponedCount(); };
+  dbRequest.onerror = (e) => console.error("IndexedDB error", e);
 
   const mandatoryConfig = [
     { title: "▶ Общий вид объекта (здания)", prefix: "01_building" },
@@ -675,18 +592,6 @@
     const savedName = safeGetLocal('installerName'); 
     if (savedName) document.getElementById('installerName').value = savedName;
     updateMainValidation();
-    
-    // Обновляем метрику хранилища
-    if (navigator.storage && navigator.storage.estimate) {
-        navigator.storage.estimate().then(estimate => {
-            if (estimate.usage !== undefined && estimate.quota !== undefined) {
-                const used = (estimate.usage / (1024 * 1024)).toFixed(1);
-                const total = (estimate.quota / (1024 * 1024)).toFixed(1);
-                const si = document.getElementById('storageInfo');
-                if (si) si.innerText = `Занято ${used} МБ из ${total} МБ`;
-            }
-        }).catch(err => console.warn("Storage estimate error", err));
-    }
   });
   window.addEventListener('resize', () => {
     if(document.getElementById('signatureModal').style.display === 'flex') {
@@ -1234,7 +1139,7 @@
   }
 
   function buildEmailBodyText() {
-    const gps = (state.coordinates && !state.coordinates.error) ? `${state.coordinates.lat.toFixed(6)},${state.coordinates.lng.toFixed(6)}` : 'Не определены';
+    const gps = (state.coordinates && !state.coordinates.error) ? `${state.coordinates.lat.toFixed(6)}, ${state.coordinates.lng.toFixed(6)}` : 'Не определены';
     const datetime = formatDateTime(state.creationDate); 
     
     const appVersionText = document.querySelector('footer') ? document.querySelector('footer').innerText : 'Версия 2.6.0';
@@ -1363,11 +1268,12 @@
         newGasDirection: state.newGasDirection || "", 
         simCardNumber: state.simCardNumber || "", 
         comment: state.comment || "",
-        gps: (state.coordinates && !state.coordinates.error) ? `${state.coordinates.lat.toFixed(6)},${state.coordinates.lng.toFixed(6)}` : 'Нет', 
+        gps: (state.coordinates && !state.coordinates.error) ? `${state.coordinates.lat.toFixed(6)}, ${state.coordinates.lng.toFixed(6)}` : 'Нет', 
         date: formatDateTime(state.creationDate), 
         timestamp: Date.now() 
       };
 
+      // НОВАЯ ЛОГИКА: Всегда сначала сохраняем данные в локальную память и только после успешного сохранения запускаем процесс синхронизации.
       function saveAndSync(data) {
         if (!db) return;
         const tx = db.transaction("pending_sync", "readwrite");
@@ -1379,7 +1285,7 @@
       
       saveAndSync(fbReportData);
 
-      const zipBlob = new Blob([finalZipUint8], {type:"application/zip"});
+      const base64Data = uint8ToBase64(finalZipUint8);
       if (db) {
         const tx = db.transaction("archives", "readwrite");
         
@@ -1402,7 +1308,7 @@
 
         tx.objectStore("archives").put({ 
           name: currentZipName, 
-          blob: zipBlob, 
+          base64: base64Data, 
           text: emailBodyText, 
           date: new Date().toISOString() 
         });
@@ -1565,39 +1471,10 @@
 
   function loadArchives() {
     archiveListContainer.innerHTML = '<div style="text-align:center; padding: 20px; color: #64748b;">Загрузка архивов...</div>';
-    if (!db) {
-      archiveListContainer.innerHTML = '<div style="text-align:center; padding: 20px; color:#ef4444;">БД не открыта, см. предупреждение сверху</div>';
-      return;
-    }
-
-    savedArchives = [];
-
-    try {
-      const tx = db.transaction("archives", "readonly");
-      const store = tx.objectStore("archives");
-      const index = store.index("date");
-      const request = index.openCursor(null, "prev");
-
-      request.onsuccess = (e) => {
-        const cursor = e.target.result;
-
-        if (!cursor || savedArchives.length >= 30) {
-          renderArchiveList();
-          return;
-        }
-
-        savedArchives.push(cursor.value);
-        cursor.continue();
-      };
-
-      request.onerror = () => {
-        archiveListContainer.innerHTML =
-          '<div style="text-align:center; padding:20px; color:#dc2626;">Ошибка загрузки архивов</div>';
-      };
-    } catch (err) {
-      archiveListContainer.innerHTML =
-        '<div style="text-align:center; padding:20px; color:#dc2626;">Ошибка доступа к индексу: ' + (err.message || '') + '</div>';
-    }
+    if (!db) { archiveListContainer.innerHTML = '<div style="text-align:center; padding: 20px;">Ошибка БД</div>'; return; }
+    db.transaction("archives", "readonly").objectStore("archives").getAll().onsuccess = (e) => {
+      savedArchives = e.target.result; savedArchives.sort((a, b) => b.date.localeCompare(a.date)); renderArchiveList();
+    };
   }
 
   function renderArchiveList() {
@@ -1665,11 +1542,14 @@
     const filesToShare = [];
     filesDataArray.forEach(f => {
       let fileBlob;
-      if (f.blob) fileBlob = f.blob;
-      else if (f.base64) fileBlob = new Blob([base64ToUint8(f.base64)], {type:"application/zip"});
-      else if (f.data) fileBlob = new Blob([f.data], {type:"application/zip"});
-      else return;
-      filesToShare.push(new File([fileBlob], f.name, {type:"application/zip"}));
+      if (f.base64) {
+         fileBlob = new Blob([base64ToUint8(f.base64)], { type: "application/zip" });
+      } else if (f.data) {
+         fileBlob = new Blob([f.data], { type: "application/zip" });
+      } else {
+         fileBlob = f.blob;
+      }
+      filesToShare.push(new File([fileBlob], f.name, { type: "application/zip" }));
     });
 
     if (navigator.canShare && navigator.canShare({ files: filesToShare })) {
@@ -1681,11 +1561,7 @@
       }
     } else {
         filesDataArray.forEach(f => {
-          let fileBlob;
-          if (f.blob) fileBlob = f.blob;
-          else if (f.base64) fileBlob = new Blob([base64ToUint8(f.base64)], {type:"application/zip"});
-          else if (f.data) fileBlob = new Blob([f.data], {type:"application/zip"});
-          else return;
+          let fileBlob = f.base64 ? new Blob([base64ToUint8(f.base64)], { type: "application/zip" }) : (f.data ? new Blob([f.data], { type: "application/zip" }) : f.blob);
           const link = document.createElement('a'); link.href = URL.createObjectURL(fileBlob); link.download = f.name; document.body.appendChild(link); link.click(); document.body.removeChild(link);
         });
         if (isMultiSelectMode) { selectedArchives.clear(); isMultiSelectMode = false; renderArchiveList(); }
@@ -1699,7 +1575,7 @@
     // Фильтруем архивы: удаляем только те, которым больше 20 дней
     const toDelete = namesArray.filter(name => {
       const arch = savedArchives.find(a => a.name === name);
-      if (!arch || !arch.date) return true;
+      if (!arch || !arch.date) return true; // Разрешаем удаление старых архивов без даты
       return (now - new Date(arch.date).getTime() >= TWENTY_DAYS_MS);
     });
 
