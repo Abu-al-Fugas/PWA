@@ -281,7 +281,7 @@
     </div>
   </div>
 
-  <footer>iPhone | Версия 2.6.0 (test)</footer>
+  <footer>iPhone | Версия 2.6.0 (stab)</footer>
 </div>
 
 <div id="photoModal" class="modal">
@@ -1028,7 +1028,7 @@
                 <input type="checkbox" id="unreadableSerialCb" ${isUnreadable ? 'checked' : ''} ${disabledAttr}> № нечитаемый
               </label>
           </div>
-          <input type="text" inputmode="decimal" placeholder="Показания" value="${state.oldMeterReadings}" class="${inputClassR}" style="width: 100\%; padding: 8px 12px; margin-bottom: 8px; border-radius: 10px; font-size: 0.9rem;" ${disabledAttr}>`;
+          <input type="text" inputmode="decimal" placeholder="Показания" value="${state.oldMeterReadings}" class="${inputClassR}" style="width: 100%; padding: 8px 12px; margin-bottom: 8px; border-radius: 10px; font-size: 0.9rem;" ${disabledAttr}>`;
         
         const inputs = inputDiv.querySelectorAll('input[type="text"]');
         const cb = inputDiv.querySelector('#unreadableSerialCb');
@@ -1081,7 +1081,7 @@
       if (cfg.hasSerialInput && !isOldMeterCfg) {
         const inputDiv = document.createElement('div'); 
         inputDiv.className = 'dynamic-input-row';
-        inputDiv.innerHTML = `<input type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Заводской №" value="${state.serialNumber \vert{}\vert{} ''}" class="${state.serialNumber ? 'valid' : ''}">
+        inputDiv.innerHTML = `<input type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Заводской №" value="${state.serialNumber || ''}" class="${state.serialNumber ? 'valid' : ''}">
           <button class="scan-btn scan-mini-btn" type="button" aria-label="Сканировать">📷</button>`;
         const inputField = inputDiv.querySelector('input');
         inputField.addEventListener('input', (e) => { state.serialNumber = e.target.value.trim(); e.target.classList.toggle('valid', state.serialNumber !== ''); saveDraft(); validateForm(); });
@@ -1110,7 +1110,7 @@
       if (cfg.hasSimInput) {
         const inputDiv = document.createElement('div'); 
         inputDiv.className = 'dynamic-input-row';
-        inputDiv.innerHTML = `<input type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Введите № SIM-карты" value="${state.simCardNumber \vert{}\vert{} ''}" class="${state.simCardNumber ? 'valid' : ''}">
+        inputDiv.innerHTML = `<input type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Введите № SIM-карты" value="${state.simCardNumber || ''}" class="${state.simCardNumber ? 'valid' : ''}">
           <button class="scan-btn scan-mini-btn" type="button" aria-label="Сканировать">📷</button>`;
         const inputField = inputDiv.querySelector('input');
         inputField.addEventListener('input', (e) => { state.simCardNumber = e.target.value.trim(); e.target.classList.toggle('valid', state.simCardNumber !== ''); saveDraft(); validateForm(); });
@@ -1240,7 +1240,7 @@
         if (m < state.oldMeterCount) oldMeterText += "--------------------\n";
     }
 
-    let text = `• Объект: Частный дом\n• Город: ${state.cityName || 'не указан'}\n• Адрес: ${state.address}\n• Расположение: ${state.uirgLocation || 'не указано'}\n• GPS: ${gps}\n• Потребитель: ${state.consumerName}\n• ЛС: ${state.accountNumber}\n--------------------\n${oldMeterText}--------------------\n• Модель нового: ${state.meterModel}\n• № нового: ${state.serialNumber}\n• Направление: ${state.newGasDirection \vert{}\vert{} 'нет'}\n• SIM: ${state.simCardNumber || 'нет'}\n--------------------\n• Комментарий: ${state.comment \vert{}\vert{} 'нет'}\n--------------------\n• Монтажник: ${state.installerName}\n• Дата: ${datetime}\n--------------------\n• ${appVersionText}`;
+    let text = `• Объект: Частный дом\n• Город: ${state.cityName || 'не указан'}\n• Адрес: ${state.address}\n• Расположение: ${state.uirgLocation || 'не указано'}\n• GPS: ${gps}\n• Потребитель: ${state.consumerName}\n• ЛС: ${state.accountNumber}\n--------------------\n${oldMeterText}--------------------\n• Модель нового: ${state.meterModel}\n• № нового: ${state.serialNumber}\n• Направление: ${state.newGasDirection || 'нет'}\n• SIM: ${state.simCardNumber || 'нет'}\n--------------------\n• Комментарий: ${state.comment || 'нет'}\n--------------------\n• Монтажник: ${state.installerName}\n• Дата: ${datetime}\n--------------------\n• ${appVersionText}`;
     return text;
   }
 
