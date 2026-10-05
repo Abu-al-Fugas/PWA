@@ -438,7 +438,7 @@
   }
 
   let db;
-  const dbRequest = indexedDB.open("EtalonPWA_DB", 6);
+  const dbRequest = indexedDB.open("EtalonPWA_DB", 5);
   dbRequest.onupgradeneeded = (e) => {
     const database = e.target.result;
     if (!database.objectStoreNames.contains("archives")) { database.createObjectStore("archives", { keyPath: "name" }); }
