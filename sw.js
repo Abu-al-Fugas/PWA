@@ -1,4 +1,4 @@
-const CACHE_NAME = 'stm-naselenie-v2.0';
+const CACHE_NAME = 'stm-naselenie-v2.6';
 const ASSETS = [
   'index.html',
   'manifest.json',
