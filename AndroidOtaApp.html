@@ -627,7 +627,9 @@
     photos: Array.from({ length: mandatoryConfig.length }, () => []), 
     photos2: Array.from({ length: mandatoryConfig.length }, () => []), 
     photos3: Array.from({ length: mandatoryConfig.length }, () => []), 
-    currentActiveIndex: null, currentActiveMeter: 1
+    currentActiveIndex: null, currentActiveMeter: 1,
+    lastSavedSnapshot: null,
+    lastSavedZipName: ''
   };
   let currentZipName = "";
   let currentZipBlob = null;
@@ -1011,10 +1013,51 @@
     return 'report_' + dateStr + '_' + timeStr + '_' + rand;
   }
 
+  function getParametersSnapshot() {
+    return {
+      cityName: state.cityName || '',
+      address: state.address || '',
+      uirgLocation: state.uirgLocation || '',
+      installerName: state.installerName || '',
+      serialNumber: state.serialNumber || '',
+      meterModel: state.meterModel || '',
+      consumerName: state.consumerName || '',
+      accountNumber: state.accountNumber || '',
+      controllerSeal: state.controllerSeal || '',
+      oldMeterModel: state.oldMeterModel || '',
+      oldMeterSerial: state.oldMeterSerial || '',
+      oldMeterReadings: state.oldMeterReadings || '',
+      newGasDirection: state.newGasDirection || '',
+      simCardNumber: state.simCardNumber || '',
+      noOldMeter: Boolean(state.noOldMeter),
+      comment: state.comment || '',
+      oldMeterCount: state.oldMeterCount || 1,
+      oldMeterModel2: state.oldMeterModel2 || '',
+      oldMeterSerial2: state.oldMeterSerial2 || '',
+      oldMeterReadings2: state.oldMeterReadings2 || '',
+      controllerSeal2: state.controllerSeal2 || '',
+      oldMeterModel3: state.oldMeterModel3 || '',
+      oldMeterSerial3: state.oldMeterSerial3 || '',
+      oldMeterReadings3: state.oldMeterReadings3 || '',
+      controllerSeal3: state.controllerSeal3 || ''
+    };
+  }
+
+  function countParameterChanges(oldParams, newParams) {
+    if (!oldParams || !newParams) return 999;
+    let diff = 0;
+    const allKeys = Object.keys(newParams);
+    for (let k of allKeys) {
+      if (oldParams[k] !== newParams[k]) {
+        diff++;
+      }
+    }
+    return diff;
+  }
+
   function saveDraft(isLifecycleEvent) {
     if (!isLifecycleEvent) {
       let statusChanged = false;
-      // Сбрасываем флаги ТОЛЬКО при реальном изменении формы после создания архива
       if (state.archiveFresh) {
         state.archiveFresh = false;
         state.reportShared = false;
@@ -1047,7 +1090,9 @@
       newGasDirection: state.newGasDirection, simCardNumber: state.simCardNumber,
       noOldMeter: state.noOldMeter, comment: state.comment,
       coordinates: state.coordinates, creationDate: state.creationDate, gpsLocked: state.gpsLocked, 
-      photos: state.photos, photos2: state.photos2, photos3: state.photos3
+      photos: state.photos, photos2: state.photos2, photos3: state.photos3,
+      lastSavedSnapshot: state.lastSavedSnapshot,
+      lastSavedZipName: state.lastSavedZipName
     };
     const safeSnapshot = JSON.parse(JSON.stringify(draftState));
     db.transaction("drafts", "readwrite").objectStore("drafts").put({ id: "current", data: safeSnapshot });
@@ -1072,6 +1117,8 @@
         state.reportId = d.reportId || '';
         state.sentToFirebase = d.sentToFirebase || false;
         state.reportShared = d.reportShared || false;
+        state.lastSavedSnapshot = d.lastSavedSnapshot || null;
+        state.lastSavedZipName = d.lastSavedZipName || '';
         state.archiveFresh = false;
         refreshActionButtons();
         updateReportStatusBadge();
@@ -2248,24 +2295,45 @@
         const file = filesToPack[i]; generateBtn.innerText = `⏳ Упаковка: ${i + 1}/${filesToPack.length}...`; await new Promise(r => setTimeout(r, 10));
         const nameBytes = encoder.encode(file.name); const bodyBytes = file.blob;
         let crc = 0xFFFFFFFF; for (let b = 0; b < bodyBytes.length; b++) { crc ^= bodyBytes[b]; for (let j = 0; j < 8; j++) crc = (crc >>> 1) ^ (crc & 1 ? 0xEDB88320 : 0); } crc ^= 0xFFFFFFFF;
-        const lfh = new Uint8Array(30 + nameBytes.length); lfh.set([0x50, 0x4B, 0x03, 0x04, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, crc & 0xFF, (crc >>> 8) & 0xFF, (crc >>> 16) & 0xFF, (crc >>> 24) & 0xFF, bodyBytes.length & 0xFF, (bodyBytes.length >>> 8) & 0xFF, (bodyBytes.length >>> 16) & 0xFF, (bodyBytes.length >>> 24) & 0xFF, bodyBytes.length & 0xFF, (bodyBytes.length >>> 8) & 0xFF, (bodyBytes.length >>> 16) & 0xFF, (bodyBytes.length >>> 24) & 0xFF, nameBytes.length & 0xFF, (nameBytes.length >>> 8) & 0xFF, 0, 0]); lfh.set(nameBytes, 30); fileData.push(lfh, bodyBytes);
-        const cdh = new Uint8Array(46 + nameBytes.length); cdh.set([0x50, 0x4B, 0x01, 0x02, 20, 0, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, crc & 0xFF, (crc >>> 8) & 0xFF, (crc >>> 16) & 0xFF, (crc >>> 24) & 0xFF, bodyBytes.length & 0xFF, (bodyBytes.length >>> 8) & 0xFF, (bodyBytes.length >>> 16) & 0xFF, (bodyBytes.length >>> 24) & 0xFF, bodyBytes.length & 0xFF, (bodyBytes.length >>> 8) & 0xFF, (bodyBytes.length >>> 16) & 0xFF, (bodyBytes.length >>> 24) & 0xFF, nameBytes.length & 0xFF, (nameBytes.length >>> 8) & 0xFF, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, offset & 0xFF, (offset >>> 8) & 0xFF, (offset >>> 16) & 0xFF, (offset >>> 24) & 0xFF]); cdh.set(nameBytes, 46); centralDir.push(cdh); offset += lfh.length + bodyBytes.length;
+        const lfh = new Uint8Array(30 + nameBytes.length); lfh.set([0x50, 0x4B, 0x03, 0x04, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, crc & 0xFF, (crc >>> 8) & 0xFF, (crc >>> 16) & 0xFF, (crc >>> 24) & 0xFF, bodyBytes.length & 0xFF, (bodyBytes.length >>> 8) & 0xFF, (bodyBytes.length >>> 16) & 0xFF, (bodyBytes.length >>> 24) & 0xFF, nameBytes.length & 0xFF, (nameBytes.length >>> 8) & 0xFF, 0, 0]); lfh.set(nameBytes, 30); fileData.push(lfh, bodyBytes);
+        const cdh = new Uint8Array(46 + nameBytes.length); cdh.set([0x50, 0x4B, 0x01, 0x02, 20, 0, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, crc & 0xFF, (crc >>> 8) & 0xFF, (crc >>> 16) & 0xFF, (crc >>> 24) & 0xFF, bodyBytes.length & 0xFF, (bodyBytes.length >>> 8) & 0xFF, (bodyBytes.length >>> 16) & 0xFF, (bodyBytes.length >>> 24) & 0xFF, nameBytes.length & 0xFF, (nameBytes.length >>> 8) & 0xFF, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, offset & 0xFF, (offset >>> 8) & 0xFF, (offset >>> 16) & 0xFF, (offset >>> 24) & 0xFF]); cdh.set(nameBytes, 46); centralDir.push(cdh); offset += lfh.length + bodyBytes.length;
       }
       let cdLen = centralDir.reduce((a, b) => a + b.length, 0); const eocd = new Uint8Array(22); eocd.set([0x50, 0x4B, 0x05, 0x06, 0, 0, 0, 0, filesToPack.length & 0xFF, (filesToPack.length >>> 8) & 0xFF, filesToPack.length & 0xFF, (filesToPack.length >>> 8) & 0xFF, cdLen & 0xFF, (cdLen >>> 8) & 0xFF, (cdLen >>> 16) & 0xFF, (cdLen >>> 24) & 0xFF, offset & 0xFF, (offset >>> 8) & 0xFF, (offset >>> 16) & 0xFF, (offset >>> 24) & 0xFF, 0, 0]);
       const finalZipUint8 = new Uint8Array(offset + cdLen + 22); let currentPos = 0; fileData.forEach(part => { finalZipUint8.set(part, currentPos); currentPos += part.length; }); centralDir.forEach(part => { finalZipUint8.set(part, currentPos); currentPos += part.length; }); finalZipUint8.set(eocd, currentPos);
       
-      const d = new Date(state.creationDate);
-      const dateStr = `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
-      let sanitizedSerial = state.serialNumber.replace(/[^a-zа-яё0-9]/gi, '_').substring(0, 24);
-      let baseName = `${sanitizedSerial}_${dateStr}`;
-      
-      let finalName = baseName + ".zip";
-      let counter = 2;
-      let existingNames = savedArchives.map(a => a.name);
-      while (existingNames.includes(finalName)) {
-          finalName = `${baseName}_${counter}.zip`;
-          counter++;
+      const currentParams = getParametersSnapshot();
+      let shouldOverwrite = false;
+
+      // Если архив уже создавался и изменено <= 4 параметров — перезаписываем текущий
+      if (state.lastSavedSnapshot && state.lastSavedZipName) {
+        const changesCount = countParameterChanges(state.lastSavedSnapshot, currentParams);
+        if (changesCount <= 4) {
+          shouldOverwrite = true;
+        }
       }
+
+      let finalName = "";
+      if (shouldOverwrite) {
+        finalName = state.lastSavedZipName;
+      } else {
+        const d = new Date(state.creationDate || Date.now());
+        const dateStr = `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
+        let sanitizedSerial = (state.serialNumber || '00').replace(/[^a-zа-яё0-9]/gi, '_').substring(0, 24);
+        let baseName = `${sanitizedSerial}_${dateStr}`;
+        
+        finalName = baseName + ".zip";
+        let counter = 2;
+        let existingNames = savedArchives.map(a => a.name);
+        while (existingNames.includes(finalName)) {
+            finalName = `${baseName}_${counter}.zip`;
+            counter++;
+        }
+        // Если изменилось более 4 параметров, это новый отдельный отчет
+        if (state.lastSavedSnapshot) {
+          state.reportId = generateReportId();
+        }
+      }
+
       currentZipName = finalName;
       currentZipBlob = new Blob([finalZipUint8], { type: "application/zip" });
 
@@ -2353,12 +2421,21 @@
                 nativeFileUrl = fileEntry.nativeURL;
                 safeSetLocal('meta_' + currentZipName, emailBodyText);
                 
-                savedArchives.unshift({
+                state.lastSavedSnapshot = currentParams;
+                state.lastSavedZipName = currentZipName;
+
+                const exIndex = savedArchives.findIndex(a => a.name === currentZipName);
+                const archObj = {
                   name: currentZipName,
                   nativeURL: fileEntry.nativeURL,
                   entry: fileEntry,
                   date: parseArchiveDateFromName(currentZipName)
-                });
+                };
+                if (exIndex >= 0) {
+                  savedArchives[exIndex] = archObj;
+                } else {
+                  savedArchives.unshift(archObj);
+                }
 
                 clearDraft();
                 state.archiveFresh = true;
@@ -2380,13 +2457,22 @@
         if (db) {
           const tx = db.transaction("archives", "readwrite");
           tx.oncomplete = function() {
-            savedArchives.unshift({
+            state.lastSavedSnapshot = currentParams;
+            state.lastSavedZipName = currentZipName;
+
+            const exIndex = savedArchives.findIndex(a => a.name === currentZipName);
+            const archObj = {
               name: currentZipName,
               nativeURL: currentZipName,
               base64: base64Data,
               text: emailBodyText,
               date: new Date().toISOString()
-            });
+            };
+            if (exIndex >= 0) {
+              savedArchives[exIndex] = archObj;
+            } else {
+              savedArchives.unshift(archObj);
+            }
 
             clearDraft();
             state.archiveFresh = true;
@@ -2473,7 +2559,7 @@
     state.photos3.length = 0;
 
     if (watchId !== null) { navigator.geolocation.clearWatch(watchId); watchId = null; } if (gpsTimeoutId !== null) { clearTimeout(gpsTimeoutId); gpsTimeoutId = null; }
-    state = { archiveFresh: false, reportId: '', sentToFirebase: false, reportShared: false, inventoryOperations: [], currentInventoryOpType: null, cityName: '', objectName: 'Частный дом', address: '', uirgLocation: '', installerName: safeGetLocal('installerName') || '', serialNumber: '', meterModel: '', consumerRole: 'Нет', consumerName: '', accountNumber: '', signatureDataUrl: '', controllerSeal: '', oldMeterCount: 1, oldMeterModel: '', oldMeterSerial: '', oldMeterReadings: '', oldMeterModel2: '', oldMeterSerial2: '', oldMeterReadings2: '', controllerSeal2: '', oldMeterModel3: '', oldMeterSerial3: '', oldMeterReadings3: '', controllerSeal3: '', newGasDirection: '', simCardNumber: '', noOldMeter: false, comment: '', coordinates: null, creationDate: null, gpsLocked: false, photos: Array.from({ length: mandatoryConfig.length }, () => []), photos2: Array.from({ length: mandatoryConfig.length }, () => []), photos3: Array.from({ length: mandatoryConfig.length }, () => []), currentActiveIndex: null, currentActiveMeter: 1 };
+    state = { archiveFresh: false, reportId: '', sentToFirebase: false, reportShared: false, inventoryOperations: [], currentInventoryOpType: null, cityName: '', objectName: 'Частный дом', address: '', uirgLocation: '', installerName: safeGetLocal('installerName') || '', serialNumber: '', meterModel: '', consumerRole: 'Нет', consumerName: '', accountNumber: '', signatureDataUrl: '', controllerSeal: '', oldMeterCount: 1, oldMeterModel: '', oldMeterSerial: '', oldMeterReadings: '', oldMeterModel2: '', oldMeterSerial2: '', oldMeterReadings2: '', controllerSeal2: '', oldMeterModel3: '', oldMeterSerial3: '', oldMeterReadings3: '', controllerSeal3: '', newGasDirection: '', simCardNumber: '', noOldMeter: false, comment: '', coordinates: null, creationDate: null, gpsLocked: false, photos: Array.from({ length: mandatoryConfig.length }, () => []), photos2: Array.from({ length: mandatoryConfig.length }, () => []), photos3: Array.from({ length: mandatoryConfig.length }, () => []), currentActiveIndex: null, currentActiveMeter: 1, lastSavedSnapshot: null, lastSavedZipName: '' };
     currentZipName = "";
     currentZipBlob = null;
     nativeFileUrl = "";
