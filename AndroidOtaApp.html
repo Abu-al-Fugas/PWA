@@ -12,6 +12,8 @@
   <link rel="apple-touch-icon" href="icon.png">
   
   <script src="cordova.js"></script>
+<script src="jszip.min.js"></script>
+<script src="zip-utils.js"></script>
 
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -413,6 +415,263 @@
     t.innerText = msg;
     document.body.appendChild(t);
     setTimeout(() => { t.style.transition = 'opacity 0.3s'; t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 2200);
+  }
+
+
+  // Некритические сбои записываются локально и не показываются пользователю.
+  const APP_DIAGNOSTICS_KEY = 'app_diagnostics_v1';
+  function recordDiagnostic(code, error, details) {
+    const item = {
+      time: new Date().toISOString(),
+      code: String(code || 'unknown'),
+      message: String(error && (error.message || error) || '').slice(0, 400),
+      details: details || null
+    };
+    try {
+      const previous = JSON.parse(safeGetLocal(APP_DIAGNOSTICS_KEY) || '[]');
+      const records = Array.isArray(previous) ? previous : [];
+      records.push(item);
+      safeSetLocal(APP_DIAGNOSTICS_KEY, JSON.stringify(records.slice(-60)));
+    } catch (storageError) {
+      console.warn('Не удалось сохранить технический журнал', storageError);
+    }
+    console.warn('[AppDiagnostics]', item);
+  }
+
+  // DirectoryReader в Chromium возвращает каталог частями. Читаем до пустого пакета.
+  function readAllDirectoryEntries(directoryReader) {
+    return new Promise((resolve, reject) => {
+      const allEntries = [];
+      const readNextBatch = () => {
+        directoryReader.readEntries((entries) => {
+          if (!entries || entries.length === 0) {
+            resolve(allEntries);
+            return;
+          }
+          allEntries.push.apply(allEntries, entries);
+          readNextBatch();
+        }, reject);
+      };
+      readNextBatch();
+    });
+  }
+
+  function getFileEntryPromise(dirEntry, fileName, options) {
+    return new Promise((resolve, reject) => {
+      dirEntry.getFile(fileName, options || { create: false }, resolve, reject);
+    });
+  }
+
+  function getExistingFileEntry(dirEntry, fileName) {
+    return getFileEntryPromise(dirEntry, fileName, { create: false }).catch((err) => {
+      if (err && (err.code === 1 || err.code === 'NOT_FOUND_ERR')) return null;
+      throw err;
+    });
+  }
+
+  function moveFileEntryPromise(fileEntry, parentEntry, newName) {
+    return new Promise((resolve, reject) => {
+      fileEntry.moveTo(parentEntry, newName, resolve, reject);
+    });
+  }
+
+  function removeFileEntryPromise(fileEntry) {
+    return new Promise((resolve, reject) => {
+      if (!fileEntry || typeof fileEntry.remove !== 'function') {
+        resolve();
+        return;
+      }
+      fileEntry.remove(resolve, reject);
+    });
+  }
+
+  function writeBlobToFileEntry(fileEntry, blob) {
+    return new Promise((resolve, reject) => {
+      fileEntry.createWriter((writer) => {
+        let settled = false;
+        const fail = (err) => {
+          if (settled) return;
+          settled = true;
+          reject(err || new Error('Ошибка записи файла.'));
+        };
+        writer.onerror = (event) => fail(writer.error || (event && event.target && event.target.error));
+        writer.onwriteend = () => {
+          if (settled) return;
+          if (writer.error) {
+            fail(writer.error);
+            return;
+          }
+          settled = true;
+          resolve();
+        };
+        try {
+          writer.write(blob);
+        } catch (err) {
+          fail(err);
+        }
+      }, reject);
+    });
+  }
+
+  function readFileEntryBlob(fileEntry) {
+    return new Promise((resolve, reject) => fileEntry.file(resolve, reject));
+  }
+
+  function blobToUint8Array(blob) {
+    if (blob && typeof blob.arrayBuffer === 'function') {
+      return blob.arrayBuffer().then((buffer) => new Uint8Array(buffer));
+    }
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(new Uint8Array(reader.result));
+      reader.onerror = () => reject(reader.error || new Error('Не удалось прочитать записанный архив.'));
+      reader.readAsArrayBuffer(blob);
+    });
+  }
+
+  // Сначала пишем и проверяем временный файл. Старый архив заменяется только после проверки.
+  async function saveNativeArchiveOnce(dirEntry, fileName, zipBlob, expectedFiles) {
+    const suffix = Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+    const tempName = '.' + fileName + '.' + suffix + '.tmp';
+    const backupName = '.' + fileName + '.' + suffix + '.bak';
+    let tempEntry = null;
+    let backupEntry = null;
+
+    try {
+      tempEntry = await getFileEntryPromise(dirEntry, tempName, { create: true, exclusive: true });
+      await writeBlobToFileEntry(tempEntry, zipBlob);
+
+      const writtenBlob = await readFileEntryBlob(tempEntry);
+      if (writtenBlob.size !== zipBlob.size) {
+        throw new Error('Размер временного архива после записи не совпадает.');
+      }
+      const writtenBytes = await blobToUint8Array(writtenBlob);
+      await window.ArchiveZip.verifyZipData(writtenBytes, expectedFiles);
+
+      const oldEntry = await getExistingFileEntry(dirEntry, fileName);
+      if (oldEntry) {
+        backupEntry = await moveFileEntryPromise(oldEntry, dirEntry, backupName);
+      }
+
+      try {
+        const finalEntry = await moveFileEntryPromise(tempEntry, dirEntry, fileName);
+        tempEntry = null;
+        if (backupEntry) {
+          try {
+            await removeFileEntryPromise(backupEntry);
+            backupEntry = null;
+          } catch (cleanupError) {
+            recordDiagnostic('archive_backup_cleanup_failed', cleanupError, { fileName: fileName, backupName: backupName });
+          }
+        }
+        return finalEntry;
+      } catch (moveError) {
+        if (backupEntry) {
+          try {
+            await moveFileEntryPromise(backupEntry, dirEntry, fileName);
+            backupEntry = null;
+          } catch (restoreError) {
+            recordDiagnostic('archive_restore_failed', restoreError, { fileName: fileName, backupName: backupName });
+          }
+        }
+        throw moveError;
+      }
+    } catch (err) {
+      if (tempEntry) {
+        try { await removeFileEntryPromise(tempEntry); } catch (cleanupError) {
+          recordDiagnostic('archive_temp_cleanup_failed', cleanupError, { fileName: fileName, tempName: tempName });
+        }
+      }
+      throw err;
+    }
+  }
+
+  async function saveNativeArchiveWithRetry(dirEntry, fileName, zipBlob, expectedFiles) {
+    let lastError = null;
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        return await saveNativeArchiveOnce(dirEntry, fileName, zipBlob, expectedFiles);
+      } catch (err) {
+        lastError = err;
+        recordDiagnostic('native_archive_save_attempt_failed', err, { fileName: fileName, attempt: attempt });
+      }
+    }
+    throw lastError || new Error('Не удалось сохранить архив.');
+  }
+
+  function idbArchiveRequest(request) {
+    return new Promise((resolve, reject) => {
+      request.onsuccess = (event) => resolve(event.target.result);
+      request.onerror = (event) => reject(event.target.error || new Error('Ошибка IndexedDB.'));
+    });
+  }
+
+  function putArchiveRecord(record) {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('archives', 'readwrite');
+      tx.objectStore('archives').put(record);
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error || new Error('Ошибка сохранения архива в IndexedDB.'));
+      tx.onabort = () => reject(tx.error || new Error('Сохранение архива в IndexedDB прервано.'));
+    });
+  }
+
+  async function saveIndexedArchiveOnce(fileName, zipBytes, reportText, expectedFiles) {
+    if (!db) throw new Error('Локальная база данных недоступна.');
+    const suffix = Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+    const tempName = '__archive_staging__' + suffix;
+    const base64Data = uint8ToBase64(zipBytes);
+    const date = new Date().toISOString();
+    let stagingCreated = false;
+
+    try {
+      await putArchiveRecord({ name: tempName, base64: base64Data, text: reportText, date: date });
+      stagingCreated = true;
+      const staged = await idbArchiveRequest(db.transaction('archives', 'readonly').objectStore('archives').get(tempName));
+      if (!staged || !staged.base64) throw new Error('Временная копия архива не найдена после записи.');
+      const bytesFromStorage = base64ToUint8(staged.base64);
+      await window.ArchiveZip.verifyZipData(bytesFromStorage, expectedFiles);
+
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction('archives', 'readwrite');
+        const store = tx.objectStore('archives');
+        store.put({ name: fileName, base64: staged.base64, text: reportText, date: date });
+        store.delete(tempName);
+        tx.oncomplete = resolve;
+        tx.onerror = () => reject(tx.error || new Error('Не удалось завершить сохранение архива.'));
+        tx.onabort = () => reject(tx.error || new Error('Сохранение архива прервано.'));
+      });
+
+      return { name: fileName, base64: base64Data, text: reportText, date: date };
+    } catch (err) {
+      if (stagingCreated) {
+        try {
+          await new Promise((resolve, reject) => {
+            const tx = db.transaction('archives', 'readwrite');
+            tx.objectStore('archives').delete(tempName);
+            tx.oncomplete = resolve;
+            tx.onerror = () => reject(tx.error);
+            tx.onabort = () => reject(tx.error);
+          });
+        } catch (cleanupError) {
+          recordDiagnostic('indexeddb_archive_temp_cleanup_failed', cleanupError, { fileName: fileName });
+        }
+      }
+      throw err;
+    }
+  }
+
+  async function saveIndexedArchiveWithRetry(fileName, zipBytes, reportText, expectedFiles) {
+    let lastError = null;
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        return await saveIndexedArchiveOnce(fileName, zipBytes, reportText, expectedFiles);
+      } catch (err) {
+        lastError = err;
+        recordDiagnostic('indexeddb_archive_save_attempt_failed', err, { fileName: fileName, attempt: attempt });
+      }
+    }
+    throw lastError || new Error('Не удалось сохранить архив.');
   }
   
   function scrollToTop() {
@@ -836,16 +1095,15 @@
 
     if (typeof cordova !== 'undefined' && cordova.file) {
       window.resolveLocalFileSystemURL(cordova.file.dataDirectory, function(dirEntry) {
-        const reader = dirEntry.createReader();
-        reader.readEntries(function(entries) {
-          const zipFiles = (entries || []).filter(e => e.isFile && e.name.endsWith('.zip'));
+        readAllDirectoryEntries(dirEntry.createReader()).then((entries) => {
+          const zipFiles = entries.filter(e => e.isFile && e.name.toLowerCase().endsWith('.zip'));
           const totalEl = document.getElementById('totalReportsCount');
           if (totalEl) totalEl.innerText = zipFiles.length;
-        }, function() {});
-      }, function() {});
+        }).catch((err) => recordDiagnostic('archive_counter_read_failed', err));
+      }, function(err) { recordDiagnostic('archive_counter_directory_failed', err); });
     } else if (db) {
       db.transaction("archives", "readonly").objectStore("archives").getAll().onsuccess = (e) => {
-        const archives = e.target.result || [];
+        const archives = (e.target.result || []).filter(a => a && typeof a.name === 'string' && a.name.toLowerCase().endsWith('.zip'));
         const totalEl = document.getElementById('totalReportsCount');
         if (totalEl) totalEl.innerText = archives.length;
       };
@@ -1075,7 +1333,7 @@
       }
     }
     
-    if (!db) return;
+    if (!db) return Promise.resolve(false);
     const draftState = {
       reportId: state.reportId,
       sentToFirebase: state.sentToFirebase,
@@ -1095,10 +1353,35 @@
       lastSavedZipName: state.lastSavedZipName
     };
     const safeSnapshot = JSON.parse(JSON.stringify(draftState));
-    db.transaction("drafts", "readwrite").objectStore("drafts").put({ id: "current", data: safeSnapshot });
+    return new Promise((resolve) => {
+      try {
+        const tx = db.transaction("drafts", "readwrite");
+        tx.objectStore("drafts").put({ id: "current", data: safeSnapshot });
+        tx.oncomplete = () => resolve(true);
+        tx.onerror = () => { recordDiagnostic('draft_save_failed', tx.error); resolve(false); };
+        tx.onabort = () => { recordDiagnostic('draft_save_aborted', tx.error); resolve(false); };
+      } catch (err) {
+        recordDiagnostic('draft_save_exception', err);
+        resolve(false);
+      }
+    });
   }
 
-  function clearDraft() { if (db) { db.transaction("drafts", "readwrite").objectStore("drafts").delete("current"); } }
+  function clearDraft() {
+    if (!db) return Promise.resolve(false);
+    return new Promise((resolve) => {
+      try {
+        const tx = db.transaction("drafts", "readwrite");
+        tx.objectStore("drafts").delete("current");
+        tx.oncomplete = () => resolve(true);
+        tx.onerror = () => { recordDiagnostic('draft_clear_failed', tx.error); resolve(false); };
+        tx.onabort = () => { recordDiagnostic('draft_clear_aborted', tx.error); resolve(false); };
+      } catch (err) {
+        recordDiagnostic('draft_clear_exception', err);
+        resolve(false);
+      }
+    });
+  }
 
   function checkDraft() {
     if (!db) return;
@@ -2264,7 +2547,14 @@
     if (generateBtn.disabled) return;
     generateBtn.innerText = "⏳ Сборка архива..."; generateBtn.disabled = true;
     const emailBodyText = buildEmailBodyText();
+    let draftSavedBeforeArchive = false;
     try {
+      // Сначала фиксируем черновик. Даже если ZIP не удастся собрать, данные останутся в IndexedDB.
+      draftSavedBeforeArchive = await saveDraft(true);
+      if (!draftSavedBeforeArchive) {
+        recordDiagnostic('draft_not_persisted_before_zip', new Error('Не удалось подтвердить сохранение черновика.'));
+      }
+
       const filesToPack = [];
       
       mandatoryConfig.forEach((cfg, idx) => {
@@ -2290,17 +2580,24 @@
       filesToPack.unshift({ name: 'report_info.txt', blob: new TextEncoder().encode(emailBodyText) });
       if (state.signatureDataUrl) { filesToPack.push({ name: 'signature.png', blob: dataURItoUint8Array(state.signatureDataUrl) }); }
 
-      let fileData = [], centralDir = [], offset = 0; const encoder = new TextEncoder();
-      for (let i = 0; i < filesToPack.length; i++) {
-        const file = filesToPack[i]; generateBtn.innerText = `⏳ Упаковка: ${i + 1}/${filesToPack.length}...`; await new Promise(r => setTimeout(r, 10));
-        const nameBytes = encoder.encode(file.name); const bodyBytes = file.blob;
-        let crc = 0xFFFFFFFF; for (let b = 0; b < bodyBytes.length; b++) { crc ^= bodyBytes[b]; for (let j = 0; j < 8; j++) crc = (crc >>> 1) ^ (crc & 1 ? 0xEDB88320 : 0); } crc ^= 0xFFFFFFFF;
-        const lfh = new Uint8Array(30 + nameBytes.length); lfh.set([0x50, 0x4B, 0x03, 0x04, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, crc & 0xFF, (crc >>> 8) & 0xFF, (crc >>> 16) & 0xFF, (crc >>> 24) & 0xFF, bodyBytes.length & 0xFF, (bodyBytes.length >>> 8) & 0xFF, (bodyBytes.length >>> 16) & 0xFF, (bodyBytes.length >>> 24) & 0xFF, nameBytes.length & 0xFF, (nameBytes.length >>> 8) & 0xFF, 0, 0]); lfh.set(nameBytes, 30); fileData.push(lfh, bodyBytes);
-        const cdh = new Uint8Array(46 + nameBytes.length); cdh.set([0x50, 0x4B, 0x01, 0x02, 20, 0, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, crc & 0xFF, (crc >>> 8) & 0xFF, (crc >>> 16) & 0xFF, (crc >>> 24) & 0xFF, bodyBytes.length & 0xFF, (bodyBytes.length >>> 8) & 0xFF, (bodyBytes.length >>> 16) & 0xFF, (bodyBytes.length >>> 24) & 0xFF, nameBytes.length & 0xFF, (nameBytes.length >>> 8) & 0xFF, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, offset & 0xFF, (offset >>> 8) & 0xFF, (offset >>> 16) & 0xFF, (offset >>> 24) & 0xFF]); cdh.set(nameBytes, 46); centralDir.push(cdh); offset += lfh.length + bodyBytes.length;
+      if (!window.ArchiveZip || typeof window.ArchiveZip.createVerifiedZip !== 'function') {
+        throw new Error('ZIP-библиотека недоступна.');
       }
-      let cdLen = centralDir.reduce((a, b) => a + b.length, 0); const eocd = new Uint8Array(22); eocd.set([0x50, 0x4B, 0x05, 0x06, 0, 0, 0, 0, filesToPack.length & 0xFF, (filesToPack.length >>> 8) & 0xFF, filesToPack.length & 0xFF, (filesToPack.length >>> 8) & 0xFF, cdLen & 0xFF, (cdLen >>> 8) & 0xFF, (cdLen >>> 16) & 0xFF, (cdLen >>> 24) & 0xFF, offset & 0xFF, (offset >>> 8) & 0xFF, (offset >>> 16) & 0xFF, (offset >>> 24) & 0xFF, 0, 0]);
-      const finalZipUint8 = new Uint8Array(offset + cdLen + 22); let currentPos = 0; fileData.forEach(part => { finalZipUint8.set(part, currentPos); currentPos += part.length; }); centralDir.forEach(part => { finalZipUint8.set(part, currentPos); currentPos += part.length; }); finalZipUint8.set(eocd, currentPos);
-      
+      let finalZipUint8 = null;
+      let zipBuildLastError = null;
+      for (let buildAttempt = 1; buildAttempt <= 2; buildAttempt++) {
+        try {
+          finalZipUint8 = await window.ArchiveZip.createVerifiedZip(filesToPack, (progress) => {
+            generateBtn.innerText = `⏳ Упаковка: ${progress.index}/${progress.total}...`;
+          });
+          zipBuildLastError = null;
+          break;
+        } catch (buildError) {
+          zipBuildLastError = buildError;
+          recordDiagnostic('zip_build_verification_attempt_failed', buildError, { attempt: buildAttempt });
+        }
+      }
+      if (!finalZipUint8) throw zipBuildLastError || new Error('Не удалось сформировать корректный ZIP-архив.');
       const currentParams = getParametersSnapshot();
       let shouldOverwrite = false;
 
@@ -2375,134 +2672,112 @@
       };
 
       function saveAndSync(data) {
-        if (!db) return;
-        const tx = db.transaction("pending_sync", "readwrite");
-        const store = tx.objectStore("pending_sync");
-        const req = store.getAll();
-        req.onsuccess = (e) => {
-          const all = e.target.result || [];
-          all.forEach(rec => {
-            if (!rec.customPath && rec.data && rec.data.reportId === data.reportId) {
-              store.delete(rec.id);
-            }
-          });
-          store.add({ data: data });
-        };
-        tx.oncomplete = () => {
-          updateReportsCounters();
-          syncPendingRecords();
-        };
-        tx.onerror = (err) => { console.error("saveAndSync error", err); };
+        if (!db) {
+          recordDiagnostic('pending_report_queue_unavailable', new Error('IndexedDB недоступна.'), { reportId: data.reportId });
+          return;
+        }
+        try {
+          const tx = db.transaction("pending_sync", "readwrite");
+          const store = tx.objectStore("pending_sync");
+          const req = store.getAll();
+          req.onsuccess = (e) => {
+            const all = e.target.result || [];
+            all.forEach(rec => {
+              if (!rec.customPath && rec.data && rec.data.reportId === data.reportId) {
+                store.delete(rec.id);
+              }
+            });
+            store.add({ data: data });
+          };
+          tx.oncomplete = () => {
+            updateReportsCounters();
+            syncPendingRecords();
+          };
+          tx.onerror = () => recordDiagnostic('pending_report_queue_failed', tx.error, { reportId: data.reportId });
+          tx.onabort = () => recordDiagnostic('pending_report_queue_aborted', tx.error, { reportId: data.reportId });
+        } catch (err) {
+          recordDiagnostic('pending_report_queue_exception', err, { reportId: data.reportId });
+        }
       }
-      
-      saveAndSync(fbReportData);
 
-      (async function autoDeductMaterials() {
+      async function autoDeductMaterials() {
         const installerName = safeGetLocal('installerName') || '';
         if (!installerName || !state.meterModel) return;
         const kmchType = getKmchTypeForCounter(state.meterModel);
         const items = [{ model: state.meterModel, qty: 1 }];
         if (kmchType) items.push({ model: kmchType, qty: 1 });
         const opId = 'install_' + state.reportId;
-        const opData = { opId: opId, reportId: state.reportId, type: 'install', installer: installerName, targetInstaller: '', items: items, comment: 'Автосписание по отчёту', timestamp: Date.now(), dateStr: new Date().toISOString() };
+        const opData = {
+          opId: opId,
+          reportId: state.reportId,
+          type: 'install',
+          installer: installerName,
+          targetInstaller: '',
+          items: items,
+          comment: 'Автосписание по отчёту',
+          timestamp: Date.now(),
+          dateStr: new Date().toISOString()
+        };
         if (fbDb && navigator.onLine) {
           try { await fbDb.ref('inventory_operations/' + opId).set(opData); }
-          catch(err) { saveInventoryOpToPending(opData); }
+          catch (err) { saveInventoryOpToPending(opData); }
         } else {
           saveInventoryOpToPending(opData);
         }
-      })();
+      }
+
+      function finishArchiveSave(fileEntry, base64Data) {
+        nativeFileUrl = fileEntry ? (fileEntry.nativeURL || fileEntry.toURL()) : currentZipName;
+        safeSetLocal('meta_' + currentZipName, emailBodyText);
+        state.lastSavedSnapshot = currentParams;
+        state.lastSavedZipName = currentZipName;
+
+        const exIndex = savedArchives.findIndex(a => a.name === currentZipName);
+        const archObj = {
+          name: currentZipName,
+          nativeURL: fileEntry ? (fileEntry.nativeURL || fileEntry.toURL()) : currentZipName,
+          entry: fileEntry || undefined,
+          base64: base64Data || undefined,
+          text: emailBodyText,
+          date: parseArchiveDateFromName(currentZipName)
+        };
+        if (exIndex >= 0) savedArchives[exIndex] = archObj;
+        else savedArchives.unshift(archObj);
+
+        // Черновик удаляется только после подтверждённой записи и проверки итогового файла.
+        clearDraft();
+        state.archiveFresh = true;
+        savedFileNameSpan.innerText = currentZipName;
+        refreshActionButtons();
+        validateForm();
+        updateReportStatusBadge();
+        updateReportsCounters();
+
+        // Синхронизация и списание материалов выполняются только после сохранения ZIP.
+        saveAndSync(fbReportData);
+        autoDeductMaterials().catch((err) => {
+          recordDiagnostic('auto_deduct_after_archive_failed', err, { fileName: currentZipName });
+        });
+      }
 
       if (typeof cordova !== 'undefined' && cordova.file) {
-        window.resolveLocalFileSystemURL(cordova.file.dataDirectory, function (dirEntry) {
-          dirEntry.getFile(currentZipName, { create: true, exclusive: false }, function (fileEntry) {
-            fileEntry.createWriter(function (fileWriter) {
-              fileWriter.onwriteend = function () {
-                nativeFileUrl = fileEntry.nativeURL;
-                safeSetLocal('meta_' + currentZipName, emailBodyText);
-                
-                state.lastSavedSnapshot = currentParams;
-                state.lastSavedZipName = currentZipName;
-
-                const exIndex = savedArchives.findIndex(a => a.name === currentZipName);
-                const archObj = {
-                  name: currentZipName,
-                  nativeURL: fileEntry.nativeURL,
-                  entry: fileEntry,
-                  date: parseArchiveDateFromName(currentZipName)
-                };
-                if (exIndex >= 0) {
-                  savedArchives[exIndex] = archObj;
-                } else {
-                  savedArchives.unshift(archObj);
-                }
-
-                clearDraft();
-                state.archiveFresh = true;
-                savedFileNameSpan.innerText = currentZipName;
-                refreshActionButtons();
-                validateForm();
-                updateReportStatusBadge();
-                updateReportsCounters();
-                syncPendingRecords();
-              };
-              fileWriter.onerror = function (err) { alert("Ошибка сохранения: " + JSON.stringify(err)); resetGenBtn(); };
-              fileWriter.write(currentZipBlob);
-            });
-          }, function(e){ alert("Ошибка доступа: " + JSON.stringify(e)); resetGenBtn(); });
-        }, function(e){ alert("Ошибка памяти: " + JSON.stringify(e)); resetGenBtn(); });
+        const dirEntry = await new Promise((resolve, reject) => {
+          window.resolveLocalFileSystemURL(cordova.file.dataDirectory, resolve, reject);
+        });
+        const fileEntry = await saveNativeArchiveWithRetry(dirEntry, currentZipName, currentZipBlob, filesToPack);
+        finishArchiveSave(fileEntry, null);
       } else {
-        const base64Data = uint8ToBase64(finalZipUint8);
-        safeSetLocal('meta_' + currentZipName, emailBodyText);
-        if (db) {
-          const tx = db.transaction("archives", "readwrite");
-          tx.oncomplete = function() {
-            state.lastSavedSnapshot = currentParams;
-            state.lastSavedZipName = currentZipName;
-
-            const exIndex = savedArchives.findIndex(a => a.name === currentZipName);
-            const archObj = {
-              name: currentZipName,
-              nativeURL: currentZipName,
-              base64: base64Data,
-              text: emailBodyText,
-              date: new Date().toISOString()
-            };
-            if (exIndex >= 0) {
-              savedArchives[exIndex] = archObj;
-            } else {
-              savedArchives.unshift(archObj);
-            }
-
-            clearDraft();
-            state.archiveFresh = true;
-            savedFileNameSpan.innerText = currentZipName;
-            refreshActionButtons();
-            validateForm();
-            updateReportStatusBadge();
-            updateReportsCounters();
-            syncPendingRecords();
-          };
-          tx.onerror = function(err) {
-            showToast("Сбой записи в память. Проверьте свободное место на телефоне.");
-            resetGenBtn();
-          };
-          tx.onabort = function(err) {
-            showToast("Сохранение прервано системой.");
-            resetGenBtn();
-          };
-          tx.objectStore("archives").put({ 
-            name: currentZipName, 
-            base64: base64Data, 
-            text: emailBodyText, 
-            date: new Date().toISOString() 
-          });
-        } else {
-          showToast("Локальная память браузера недоступна.");
-          resetGenBtn();
-        }
+        const stored = await saveIndexedArchiveWithRetry(currentZipName, finalZipUint8, emailBodyText, filesToPack);
+        finishArchiveSave(null, stored.base64);
       }
-    } catch (err) { showToast("Сбой сборки: " + err.message); resetGenBtn(); }
+    } catch (err) {
+      recordDiagnostic('report_archive_creation_or_save_failed', err, { fileName: currentZipName || null });
+      const failureMessage = draftSavedBeforeArchive
+        ? 'Не удалось сохранить отчёт. Данные оставлены в черновике. Повторите сохранение.'
+        : 'Не удалось сохранить отчёт и подтвердить резервный черновик. Не закрывайте приложение; повторите сохранение.';
+      showToast(failureMessage);
+      resetGenBtn();
+    }
   });
 
   function resetGenBtn() {
@@ -3033,37 +3308,34 @@
   function loadArchives() {
     archiveListContainer.innerHTML = '<div style="text-align:center; padding: 20px; color: #64748b;">Загрузка архивов...</div>';
     if (typeof cordova !== 'undefined' && cordova.file) {
-      window.resolveLocalFileSystemURL(cordova.file.dataDirectory, function(dirEntry) {
-        const reader = dirEntry.createReader();
-        reader.readEntries(async function(entries) {
-          const zipEntries = (entries || []).filter(e => e.isFile && e.name.endsWith('.zip'));
-          
-          const entriesWithMeta = await Promise.all(zipEntries.map(entry => {
-            return new Promise(resolve => {
-              entry.file(f => resolve({ entry: entry, time: f.lastModified || f.modificationTime || 0 }), 
-                         () => resolve({ entry: entry, time: 0 }));
-            });
-          }));
-          
+      window.resolveLocalFileSystemURL(cordova.file.dataDirectory, async function(dirEntry) {
+        try {
+          const entries = await readAllDirectoryEntries(dirEntry.createReader());
+          const zipEntries = entries.filter(e => e.isFile && e.name.toLowerCase().endsWith('.zip'));
+          const entriesWithMeta = await Promise.all(zipEntries.map(entry => new Promise(resolve => {
+            entry.file(f => resolve({ entry: entry, time: f.lastModified || f.modificationTime || 0 }),
+                       () => resolve({ entry: entry, time: 0 }));
+          })));
           entriesWithMeta.sort((a, b) => b.time - a.time);
-          
           savedArchives = entriesWithMeta.map(item => ({
             name: item.entry.name,
-            nativeURL: item.entry.nativeURL,
+            nativeURL: item.entry.nativeURL || item.entry.toURL(),
             entry: item.entry,
             date: parseArchiveDateFromName(item.entry.name)
           }));
           renderArchiveList();
-        }, function(err) {
-          archiveListContainer.innerHTML = '<div style="text-align:center; padding: 20px;">Ошибка чтения папки</div>';
-        });
+        } catch (err) {
+          recordDiagnostic('archive_list_read_failed', err);
+          archiveListContainer.innerHTML = '<div style="text-align:center; padding: 20px;">Не удалось загрузить список архивов</div>';
+        }
       }, function(err) {
-        archiveListContainer.innerHTML = '<div style="text-align:center; padding: 20px;">Ошибка доступа к памяти</div>';
+        recordDiagnostic('archive_list_directory_failed', err);
+        archiveListContainer.innerHTML = '<div style="text-align:center; padding: 20px;">Нет доступа к сохранённым архивам</div>';
       });
     } else {
       if (!db) { archiveListContainer.innerHTML = '<div style="text-align:center; padding: 20px;">Ошибка БД</div>'; return; }
       db.transaction("archives", "readonly").objectStore("archives").getAll().onsuccess = (e) => {
-        const raw = e.target.result || [];
+        const raw = (e.target.result || []).filter(a => a && typeof a.name === 'string' && a.name.toLowerCase().endsWith('.zip'));
         raw.sort((a, b) => new Date(b.date) - new Date(a.date));
         savedArchives = raw.map(a => ({
           name: a.name,
@@ -3195,13 +3467,49 @@
     renderArchiveList();
   });
 
-  function shareFiles(filesArray, subjectText, specificMessage, onSuccess) {
-    let finalMessage = specificMessage || "Фотоотчет во вложении";
+  function getArchiveBlobForShare(archiveKey) {
+    const archive = savedArchives.find(a =>
+      a.name === archiveKey || a.nativeURL === archiveKey ||
+      (a.entry && (a.entry.nativeURL === archiveKey || a.entry.toURL() === archiveKey))
+    );
+
+    if (archive && archive.base64) {
+      return Promise.resolve(new Blob([base64ToUint8(archive.base64)], { type: 'application/zip' }));
+    }
+    if (archive && archive.entry) return readFileEntryBlob(archive.entry);
+
+    if (typeof cordova !== 'undefined' && window.resolveLocalFileSystemURL &&
+        typeof archiveKey === 'string' && /^(file|content):/i.test(archiveKey)) {
+      return new Promise((resolve, reject) => {
+        window.resolveLocalFileSystemURL(archiveKey, (entry) => entry.file(resolve, reject), reject);
+      });
+    }
+
+    return Promise.reject(new Error('Сохранённый архив не найден.'));
+  }
+
+  function downloadBlob(blob, fileName) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+      link.remove();
+    }, 1500);
+  }
+
+  async function shareFiles(filesArray, subjectText, specificMessage, onSuccess) {
+    let finalMessage = specificMessage || 'Фотоотчет во вложении';
     if (!specificMessage && filesArray.length === 1) {
       const fileName = String(filesArray[0]).split('/').pop();
-      const savedMeta = localStorage.getItem('meta_' + fileName);
+      const savedMeta = safeGetLocal('meta_' + fileName);
       if (savedMeta) finalMessage = savedMeta;
     }
+
     if (typeof cordova !== 'undefined' && window.plugins && window.plugins.socialsharing) {
       window.plugins.socialsharing.shareWithOptions(
         { message: finalMessage, subject: subjectText, files: filesArray },
@@ -3213,11 +3521,47 @@
           }
           if (onSuccess) onSuccess();
         },
-        function(err) { alert("Ошибка отправки: " + err); }
+        function(err) {
+          recordDiagnostic('native_share_failed', err);
+          showToast('Не удалось открыть отправку. Архивы остались сохранены.');
+        }
       );
-    } else {
-      alert("Готово! Для отправки используйте файловый менеджер.");
-      if (onSuccess) onSuccess();
+      return;
+    }
+
+    try {
+      const preparedFiles = [];
+      for (const key of filesArray) {
+        const blob = await getArchiveBlobForShare(key);
+        const archive = savedArchives.find(a =>
+          a.name === key || a.nativeURL === key || (a.entry && a.entry.nativeURL === key)
+        );
+        const fileName = archive ? archive.name : String(key).split('/').pop();
+        preparedFiles.push(typeof File !== 'undefined'
+          ? new File([blob], fileName, { type: 'application/zip', lastModified: Date.now() })
+          : { blob: blob, name: fileName });
+      }
+
+      if (typeof File === 'function' && navigator.share && navigator.canShare &&
+          preparedFiles.every(file => file instanceof File) && navigator.canShare({ files: preparedFiles })) {
+        await navigator.share({ title: subjectText || 'Фотоотчёты', text: finalMessage, files: preparedFiles });
+        if (isMultiSelectMode) {
+          selectedArchives.clear();
+          isMultiSelectMode = false;
+          renderArchiveList();
+        }
+        if (onSuccess) onSuccess();
+        return;
+      }
+
+      preparedFiles.forEach(file => downloadBlob(file.blob || file, file.name));
+      showToast('Архивы сохранены в загрузки. Их можно прикрепить к сообщению вручную.');
+      // Сам факт загрузки не считается отправкой отчёта.
+    } catch (err) {
+      // Отмена системного окна «Поделиться» — штатное действие пользователя, не ошибка.
+      if (err && err.name === 'AbortError') return;
+      recordDiagnostic('archive_share_fallback_failed', err);
+      showToast('Не удалось подготовить архивы к отправке. Они остались сохранены.');
     }
   }
 
