@@ -456,6 +456,59 @@
     });
   }
 
+  async function getArchiveStorageContext() {
+    if (typeof cordova !== 'undefined' && cordova.file && window.resolveLocalFileSystemURL) {
+      const dirEntry = await new Promise((resolve, reject) => {
+        window.resolveLocalFileSystemURL(cordova.file.dataDirectory, resolve, reject);
+      });
+      const entries = await readAllDirectoryEntries(dirEntry.createReader());
+      const zipEntries = window.ArchiveZip.filterNativeZipEntries(entries);
+      return { kind: 'native', dirEntry: dirEntry, names: zipEntries.map(entry => entry.name) };
+    }
+
+    if (db) {
+      const records = await new Promise((resolve, reject) => {
+        const request = db.transaction('archives', 'readonly').objectStore('archives').getAll();
+        request.onsuccess = () => resolve(request.result || []);
+        request.onerror = () => reject(request.error || new Error('Не удалось прочитать список сохранённых архивов.'));
+      });
+      return {
+        kind: 'indexeddb',
+        dirEntry: null,
+        names: records.filter(record => record && typeof record.name === 'string' && /\.zip$/i.test(record.name)).map(record => record.name)
+      };
+    }
+
+    // Запасной вариант нужен только для старых WebView без доступной БД.
+    return { kind: 'memory', dirEntry: null, names: (savedArchives || []).map(item => item.name) };
+  }
+
+  async function removePreviousArchiveAfterRename(storageContext, previousName, newName) {
+    if (!previousName || !newName || previousName === newName) return;
+    try {
+      if (storageContext && storageContext.kind === 'native' && storageContext.dirEntry) {
+        const oldEntry = await getExistingFileEntry(storageContext.dirEntry, previousName);
+        if (oldEntry) await removeFileEntryPromise(oldEntry);
+      } else if (storageContext && storageContext.kind === 'indexeddb' && db) {
+        await new Promise((resolve, reject) => {
+          const tx = db.transaction('archives', 'readwrite');
+          tx.objectStore('archives').delete(previousName);
+          tx.oncomplete = resolve;
+          tx.onerror = () => reject(tx.error || new Error('Не удалось удалить старую запись архива.'));
+          tx.onabort = () => reject(tx.error || new Error('Удаление старой записи архива прервано.'));
+        });
+      }
+      try { localStorage.removeItem('meta_' + previousName); } catch (storageError) {
+        recordDiagnostic('archive_old_metadata_cleanup_failed', storageError, { previousName: previousName });
+      }
+      savedArchives = (savedArchives || []).filter(item => item && item.name !== previousName);
+      selectedArchives.delete(previousName);
+    } catch (err) {
+      // Новая проверенная копия уже сохранена. Ошибка очистки старого имени не отменяет её.
+      recordDiagnostic('archive_old_file_cleanup_failed', err, { previousName: previousName, newName: newName });
+    }
+  }
+
   function getFileEntryPromise(dirEntry, fileName, options) {
     return new Promise((resolve, reject) => {
       dirEntry.getFile(fileName, options || { create: false }, resolve, reject);
@@ -2609,27 +2662,28 @@
         }
       }
 
-      let finalName = "";
-      if (shouldOverwrite) {
-        finalName = state.lastSavedZipName;
-      } else {
-        const d = new Date(state.creationDate || Date.now());
-        const dateStr = `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
-        let sanitizedSerial = (state.serialNumber || '00').replace(/[^a-zа-яё0-9]/gi, '_').substring(0, 24);
-        let baseName = `${sanitizedSerial}_${dateStr}`;
-        
-        finalName = baseName + ".zip";
-        let counter = 2;
-        let existingNames = savedArchives.map(a => a.name);
-        while (existingNames.includes(finalName)) {
-            finalName = `${baseName}_${counter}.zip`;
-            counter++;
-        }
-        // Если изменилось более 4 параметров, это новый отдельный отчет
-        if (state.lastSavedSnapshot) {
-          state.reportId = generateReportId();
-        }
+      // Получаем реальные имена файлов из постоянного хранилища, а не только из
+      // массива savedArchives, который может быть ещё не загружен на главный экран.
+      const archiveStorageContext = await getArchiveStorageContext();
+      const previousZipName = state.lastSavedZipName || '';
+      const previousSerialNumber = state.lastSavedSnapshot ? state.lastSavedSnapshot.serialNumber : '';
+
+      // Если изменений слишком много — это новый отчёт; старый не переименовываем и не удаляем.
+      if (!shouldOverwrite && state.lastSavedSnapshot) {
+        state.reportId = generateReportId();
       }
+
+      const finalName = window.ArchiveZip.resolveArchiveFileName({
+        serialNumber: state.serialNumber,
+        previousSerialNumber: previousSerialNumber,
+        previousName: previousZipName,
+        creationDate: state.creationDate || Date.now(),
+        existingNames: archiveStorageContext.names,
+        overwriteExisting: shouldOverwrite
+      });
+      const previousZipNameToRemove = shouldOverwrite && previousZipName && previousZipName !== finalName
+        ? previousZipName
+        : '';
 
       currentZipName = finalName;
       currentZipBlob = new Blob([finalZipUint8], { type: "application/zip" });
@@ -2760,14 +2814,14 @@
         });
       }
 
-      if (typeof cordova !== 'undefined' && cordova.file) {
-        const dirEntry = await new Promise((resolve, reject) => {
-          window.resolveLocalFileSystemURL(cordova.file.dataDirectory, resolve, reject);
-        });
-        const fileEntry = await saveNativeArchiveWithRetry(dirEntry, currentZipName, currentZipBlob, filesToPack);
+      if (archiveStorageContext.kind === 'native' && archiveStorageContext.dirEntry) {
+        const fileEntry = await saveNativeArchiveWithRetry(archiveStorageContext.dirEntry, currentZipName, currentZipBlob, filesToPack);
+        // Удаляем прежнее имя только после того, как новый ZIP записан и прошёл CRC-проверку.
+        await removePreviousArchiveAfterRename(archiveStorageContext, previousZipNameToRemove, currentZipName);
         finishArchiveSave(fileEntry, null);
       } else {
         const stored = await saveIndexedArchiveWithRetry(currentZipName, finalZipUint8, emailBodyText, filesToPack);
+        await removePreviousArchiveAfterRename(archiveStorageContext, previousZipNameToRemove, currentZipName);
         finishArchiveSave(null, stored.base64);
       }
     } catch (err) {
@@ -3305,47 +3359,47 @@
     return new Date().toISOString();
   }
 
-  function loadArchives() {
+  async function loadArchives() {
     archiveListContainer.innerHTML = '<div style="text-align:center; padding: 20px; color: #64748b;">Загрузка архивов...</div>';
-    if (typeof cordova !== 'undefined' && cordova.file) {
-      window.resolveLocalFileSystemURL(cordova.file.dataDirectory, async function(dirEntry) {
-        try {
-          const entries = await readAllDirectoryEntries(dirEntry.createReader());
-          const zipEntries = entries.filter(e => e.isFile && e.name.toLowerCase().endsWith('.zip'));
-          const entriesWithMeta = await Promise.all(zipEntries.map(entry => new Promise(resolve => {
-            entry.file(f => resolve({ entry: entry, time: f.lastModified || f.modificationTime || 0 }),
-                       () => resolve({ entry: entry, time: 0 }));
-          })));
-          entriesWithMeta.sort((a, b) => b.time - a.time);
-          savedArchives = entriesWithMeta.map(item => ({
-            name: item.entry.name,
-            nativeURL: item.entry.nativeURL || item.entry.toURL(),
-            entry: item.entry,
-            date: parseArchiveDateFromName(item.entry.name)
-          }));
-          renderArchiveList();
-        } catch (err) {
-          recordDiagnostic('archive_list_read_failed', err);
-          archiveListContainer.innerHTML = '<div style="text-align:center; padding: 20px;">Не удалось загрузить список архивов</div>';
-        }
-      }, function(err) {
-        recordDiagnostic('archive_list_directory_failed', err);
-        archiveListContainer.innerHTML = '<div style="text-align:center; padding: 20px;">Нет доступа к сохранённым архивам</div>';
-      });
-    } else {
-      if (!db) { archiveListContainer.innerHTML = '<div style="text-align:center; padding: 20px;">Ошибка БД</div>'; return; }
-      db.transaction("archives", "readonly").objectStore("archives").getAll().onsuccess = (e) => {
-        const raw = (e.target.result || []).filter(a => a && typeof a.name === 'string' && a.name.toLowerCase().endsWith('.zip'));
-        raw.sort((a, b) => new Date(b.date) - new Date(a.date));
-        savedArchives = raw.map(a => ({
-          name: a.name,
-          nativeURL: a.name,
-          base64: a.base64,
-          text: a.text,
-          date: a.date || parseArchiveDateFromName(a.name)
+    try {
+      if (typeof cordova !== 'undefined' && cordova.file && window.resolveLocalFileSystemURL) {
+        const dirEntry = await new Promise((resolve, reject) => {
+          window.resolveLocalFileSystemURL(cordova.file.dataDirectory, resolve, reject);
+        });
+        const entries = await readAllDirectoryEntries(dirEntry.createReader());
+        const zipEntries = window.ArchiveZip.filterNativeZipEntries(entries);
+
+        // Не вызываем entry.file(): для отображения достаточно имени и FileEntry.
+        // Это исключает зависание экрана на Android WebView при незавершившемся callback.
+        savedArchives = zipEntries.map(entry => ({
+          name: entry.name,
+          nativeURL: entry.nativeURL || (typeof entry.toURL === 'function' ? entry.toURL() : entry.fullPath),
+          entry: entry,
+          date: parseArchiveDateFromName(entry.name)
         }));
-        renderArchiveList();
-      };
+        savedArchives.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      } else {
+        if (!db) throw new Error('Локальная база архивов ещё не открыта.');
+        const raw = await new Promise((resolve, reject) => {
+          const request = db.transaction('archives', 'readonly').objectStore('archives').getAll();
+          request.onsuccess = () => resolve(request.result || []);
+          request.onerror = () => reject(request.error || new Error('Ошибка чтения базы архивов.'));
+        });
+        savedArchives = raw
+          .filter(a => a && typeof a.name === 'string' && /\.zip$/i.test(a.name))
+          .sort((a, b) => new Date(b.date || parseArchiveDateFromName(b.name)).getTime() - new Date(a.date || parseArchiveDateFromName(a.name)).getTime())
+          .map(a => ({
+            name: a.name,
+            nativeURL: a.name,
+            base64: a.base64,
+            text: a.text,
+            date: a.date || parseArchiveDateFromName(a.name)
+          }));
+      }
+      renderArchiveList();
+    } catch (err) {
+      recordDiagnostic('archive_list_read_failed', err);
+      archiveListContainer.innerHTML = '<div style="text-align:center; padding: 20px;">Не удалось загрузить список архивов</div>';
     }
   }
 
